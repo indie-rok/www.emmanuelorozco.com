@@ -1,3 +1,13 @@
+:root {
+  /* night theme */
+  --dark-purple: #1e152aff;
+  --azure-web: #e6fafcff;
+  --light-green: #9cfc97ff;
+  --ecru: #a69658ff;
+  --indian-red: #d16666ff;
+  --terminal-dark: #214e34;
+}
+
 body {
   font-family: Verdana, sans-serif;
   margin: auto;
@@ -21,6 +31,7 @@ html {
   -ms-overflow-style: none;
   /* IE and Edge */
   scrollbar-width: none;
+  scroll-behavior: smooth;
   /* Firefox */
 }
 
@@ -143,20 +154,8 @@ img {
 code {
   font-family: monospace;
   padding: 2px;
-  /* background-color: #f2f2f2; */
   color: #222;
   border-radius: 3px;
-}
-
-.highlight,
-.code {
-  padding: 1px 15px;
-  background-color: #f2f2f2;
-  color: #222;
-  border-radius: 3px;
-  margin-block-start: 1em;
-  margin-block-end: 1em;
-  overflow: auto;
 }
 
 blockquote {
@@ -242,7 +241,7 @@ ul.blog-posts li span {
 }
 
 ul.blog-posts li a:visited {
-  color: #8b6fcb;
+  color: #c03221;
 }
 
 /* discovery feed */
@@ -260,10 +259,6 @@ ul.discover-posts li span {
   flex: 0 0 40px;
 }
 
-ul.discover-posts li a:visited {
-  color: #8b6fcb;
-}
-
 ul.discover-posts li div {
   padding-bottom: 8px;
 }
@@ -276,10 +271,10 @@ ul.discover-posts li small a {
   color: #777 !important;
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   body {
-    background-color: #01242e;
-    color: #ddd;
+    background-color: var(--azure-web);
+    color: var(--dark-purple);
   }
 
   h1,
@@ -290,15 +285,71 @@ ul.discover-posts li small a {
   h6,
   strong,
   b {
-    color: #eee;
+    color: var(--dark-purple);
   }
 
   a {
-    color: #8cc2dd;
+    color: var(--indian-red);
   }
 
-  code {
-    background-color: #777;
+  ul.blog-posts li a:visited {
+    color: var(--ecru);
+  }
+
+  blockquote {
+    color: #32533d;
+  }
+
+  .highlight,
+  .code {
+    padding: 1px 15px;
+    background-color: var(--terminal-dark);
+    color: #222;
+    border-radius: 3px;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    overflow: auto;
+  }
+
+  pre code {
+    color: #ddd;
+  }
+
+  .helptext {
+    color: #aaa;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: var(--dark-purple);
+    color: var(--azure-web);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  strong,
+  b {
+    color: var(--azure-web);
+  }
+
+  a {
+    color: var(--light-green);
+  }
+
+  .highlight,
+  .code {
+    padding: 1px 15px;
+    background-color: var(--terminal-dark);
+    color: #222;
+    border-radius: 3px;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    overflow: auto;
   }
 
   pre code {
@@ -306,11 +357,15 @@ ul.discover-posts li small a {
   }
 
   blockquote {
-    color: #ccc;
+    color: var(--ecru);
   }
 
   .helptext {
     color: #aaa;
+  }
+
+  code.highlighter-rouge {
+    color: #a69658;
   }
 }
 
@@ -331,7 +386,7 @@ hr {
 }
 
 body:hover {
-  border-image: ;
+  border-image: none;
   border-width: 0;
 }
 
