@@ -2,12 +2,6 @@
 <nav>
     <a href="{{ site.url }}">Home</a>
     <a href="{{ site.url }}{{ site.Blog }}">Blog</a>
+    <a target="_blank" href="https://cv.emmanuelorozco.com">My CV</a>
 
-    {% for link in site.links %}
-    <a href="{{ site.url }}{{ link[1] }}">{{ link[0] }}</a>
-    {% endfor %}
-
-    {% for link in site.special_links %}
-    <a href="{{ link[1] }}">[{{ link[0] }}]</a>
-    {% endfor %}
 </nav>
