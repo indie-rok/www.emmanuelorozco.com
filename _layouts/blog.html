@@ -42,7 +42,8 @@ layout: compress
         {% assign tag_slug = tag | first %}
         {% assign no_of_posts = tag | last | size %}
 
-        <a href="{{ 'tagged/' | relative_url }}{{ tag_slug }}" title="See all posts by {{ tag_slug }} tag">#{{ tag_slug
+        <a class="link-tags" href="{{ 'tagged/' | relative_url }}{{ tag_slug }}"
+            title="See all posts by {{ tag_slug }} tag">#{{ tag_slug
             }}</a>
         {% endfor %}
     </small>

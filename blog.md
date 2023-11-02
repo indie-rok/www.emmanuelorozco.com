@@ -1,8 +1,8 @@
 ---
 layout: blog
 title: Blog
-description: Here be writings
+description: This are my learnings on day-to-day life.
 permalink: /blog
 ---
 
-Here be writings. Mostly mundane, sometimes fanciful.
+This are my learnings on day-to-day life.

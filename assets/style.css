@@ -172,7 +172,6 @@ blockquote {
 }
 
 footer {
-  padding: 25px 0;
   text-align: left;
 }
 
@@ -324,6 +323,9 @@ ul.discover-posts li small a {
   .helptext {
     color: #aaa;
   }
+  .link-tags {
+    color: var(--terminal-dark);
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -373,6 +375,10 @@ ul.discover-posts li small a {
   code.highlighter-rouge {
     color: #a69658;
   }
+
+  .link-tags {
+    color: var(--ecru);
+  }
 }
 
 ul.blog-posts {
@@ -401,13 +407,15 @@ small a {
 }
 
 .bottom-footer {
-  padding: 50px;
+  padding-top: 24px;
   text-align: center;
 }
 
 .footer-links {
   justify-content: space-evenly;
   display: flex;
+  padding: 0;
+  margin: 0;
 }
 
 .footer-links li {
