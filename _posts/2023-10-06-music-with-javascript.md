@@ -8,30 +8,28 @@ tags:
   - music
 ---
 
-Last week, I went to buildspace’s hackathon I set my goal:
+Last week, I went to buildspace’s hackathon and I set a goal:
 
-To work on something that I really really like.
-Music.
+> To work on something that I really really like. Music.
 
 So, for 3 days, I worked an app that generates chord progressions and mix them with peoples voice.
 
 The interesting part:
 
-Chord progressions were generated using code.
+> Chord progressions were generated using code.
 
-Particulary a javascript framework called Tone.js
+Particulary a javascript framework called _Tone.js_
 
 The documentation it’s pretty bad, so I’ve decided to make this post to quickly show people how to start very easly.
 
-First, install the npm library or use the javascript file.
+So first: install the [npm library](https://www.npmjs.com/package/tone) or use the javascript file.
 
-Then some of my learnings:
+> Warning:
+> You can’t play any sounds unless user makes an action. Click, hover, etc. onLoad is not supported.
 
-#### Using events to trigger music
+Then to generate music:
 
-You can’t play any sounds unless user makes an action. Click, hover, etc. onLoad is not supported.
-
-#### Generating notes
+- **Generating single notes**
 
 A single note is pretty straight forward. Just use the triggerAttackRelase method with your note and you are good to go. I’ll talk about the “1n” in a minute.
 
@@ -43,7 +41,7 @@ synth.triggerAttackRelease("C4", "1n");
 Tone.Transport.start();
 ```
 
-#### Chords
+- #### Chords
 
 It’s very similar to a single note generation, but the difference it’s that you can provide an array to .triggerAttackRelase to play the whole chord. You need Tone.PolySynth (instead of Tone.Note) to be able to play multiple notes at the same time (chord).
 
@@ -55,7 +53,7 @@ synth.triggerAttackRelease(C_MAYOR, "1n");
 Tone.Transport.start();
 ```
 
-#### Generating chord progressions
+- #### Generating chord progressions
 
 A chord progression has 3 or 4 chords in it, so, to play them one after another:
 
@@ -76,7 +74,7 @@ First param, is the chord,
 Second param is the length (in seconds) of the chord.
 Thrid param is the length (in seconds) of when to start playing (so this will play a chord in second 0 , 2 ,4 and 6).
 
-#### Looping through chord progressions
+- #### Looping through chord progressions
 
 But the point of a chord progression is loop it. I tried to use Tone.Loop but I was not sucesful. Tone.Part was my best ally.
 
@@ -108,7 +106,7 @@ function playProgression() {
 }
 ```
 
-#### Sync visuals with chord progressions
+- #### Sync visuals with chord progressions
 
 In my app, every time I played a different chord, I turn a particular block of color to make it easier to recognize that it was a new sound. To trigger this you just need to add a callback (with Tone.Draw) like this:
 
@@ -124,7 +122,7 @@ const part = new Tone.Part((time, chord) => {
 }, progression);
 ```
 
-#### Recording user input
+- #### Recording user input
 
 Tone.js includes a wrapper around the javascript audio microphone api. To use it with react:
 
@@ -139,7 +137,8 @@ async function startRecord() {
     return;
   }
 
-  // this ref is optional if you are working with react, it will allow you keep the Tone.UserMedia between re renders
+  // this ref is optional if you are working with react,
+  // it will allow you keep the Tone.UserMedia between re renders
   micRef.current = new Tone.UserMedia();
 
   try {
@@ -174,7 +173,7 @@ async function playRecording() {
 }
 ```
 
-#### Using other instruments (piano, guitar, etc)
+- #### Using other instruments (piano, guitar, etc)
 
 I did not liked the default instruments so I changed them. I also needed them to be available while being offline, so I could not use a URL with all the audio files. Instead I just downloaded the instruments from this repo, added them to the public file of my app and then initialized:
 
@@ -201,10 +200,10 @@ Worth mentioning that Tone.Sampler **is already capable** of playing multiple no
 
 So that’s it!
 
+---
+
 Hope it helps, and if you are working in any product about music and javascript, please tell me more:
 
-## schedule a meeting with me, I would love to learn more and help if I can!
+#### schedule a meeting with me, I would love to learn more and help if I can!
 
-(My Calendar)[https://cal.com/emmanuel-orozco]
-
-#blog
+[My Calendar](https://cal.com/emmanuel-orozco)

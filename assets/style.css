@@ -157,13 +157,6 @@ img {
   max-width: 100%;
 }
 
-code {
-  font-family: monospace;
-  padding: 2px;
-  color: #222;
-  border-radius: 3px;
-}
-
 blockquote {
   border-left: 1px solid #999;
   color: #222;
@@ -305,26 +298,15 @@ ul.discover-posts li small a {
     color: #32533d;
   }
 
-  .highlight,
-  .code {
-    padding: 1px 15px;
-    background-color: var(--terminal-dark);
-    color: #222;
-    border-radius: 3px;
-    margin-block-start: 1em;
-    margin-block-end: 1em;
-    overflow: auto;
-  }
-
-  pre code {
-    color: #ddd;
-  }
-
   .helptext {
     color: #aaa;
   }
   .link-tags {
     color: var(--terminal-dark);
+  }
+
+  code.highlighter-rouge {
+    color: var(--ecru);
   }
 }
 
@@ -347,21 +329,6 @@ ul.discover-posts li small a {
 
   a {
     color: var(--light-green);
-  }
-
-  .highlight,
-  .code {
-    padding: 1px 15px;
-    background-color: var(--terminal-dark);
-    color: #222;
-    border-radius: 3px;
-    margin-block-start: 1em;
-    margin-block-end: 1em;
-    overflow: auto;
-  }
-
-  pre code {
-    color: #ddd;
   }
 
   blockquote {
