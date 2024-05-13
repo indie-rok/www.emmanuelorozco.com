@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Learn and repeat
-date: 2024--03 18:30:00 +0000
+date: 2024-05-15 18:30:00 +0000
 tags:
   - learnings
 ---
