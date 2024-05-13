@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Learnings on being 30
+title: Learnings after breaking up with my cofounder
 date: 2024-05-03 18:30:00 +0000
 tags:
   - learnings
