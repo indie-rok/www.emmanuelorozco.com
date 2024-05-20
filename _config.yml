@@ -48,3 +48,4 @@ exclude:
 exclude: [vendor]
 
 Blog: /blog
+Now: /now

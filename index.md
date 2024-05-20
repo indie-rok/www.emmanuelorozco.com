@@ -17,8 +17,3 @@ I blog about my weekly learnings in my [Substack](http://emmanuelorozco.substack
 - I am a university professor in [kibo university](http://kibo.school)
 - My programing languages: Javascript, Ruby and Python
 - My front end favorites: React and Vue
-
-### What I am learning now
-
-- Learning swift to make a game I want.
-- Learning music sheet sight reading with [piano marvel](https://pianomarvel.com/)
