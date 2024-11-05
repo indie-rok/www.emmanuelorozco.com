@@ -7,7 +7,7 @@ tags:
   - teaching
 ---
 
-![AJAX and Internet](./assets/blog/blog-ajax.jpg)
+![AJAX and Internet](https://emmanuelorozco.com/assets/blog/blog-ajax.jpg)
 
 Imagine you're going to send a letter to your crush. You're going to confess your love. What do you do?
 
