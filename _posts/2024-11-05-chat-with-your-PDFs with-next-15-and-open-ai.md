@@ -20,7 +20,7 @@ tags:
 
 ---
 
-### 1. Intro
+## 1. Intro
 
 I am building a tool to read a CV and suggest improvements using OpenAI's API.
 
@@ -34,13 +34,13 @@ You can check the whole code repo [here](https://github.com/indie-rok/pdf-tools-
 
 ---
 
-### 2. Overview
+## 2. Overview
 
 This is how the app is architected:
 
 ![app architecture](https://emmanuelorozco.com/assets/blog/diagram-chat-pdf.jpg)
 
-Client Side
+### Client Side
 
 1. Read image from file input
 2. Convert File Object to ArrayBuffer
@@ -51,7 +51,7 @@ Client Side
 5. Save to an array
 6. Send base64 images via POST JSON
 
-Server Side
+### Server Side
 
 1. Receive the base64 via POST JSON
 2. Send the request to OpenAI with the base 64 image
@@ -59,11 +59,11 @@ Server Side
 
 ---
 
-### 3. Frontend
+## 3. Frontend
 
 So, let's start with the front end, we will add an input, a button, and the logic to convert the PDF to images (client-side) and to send those images to the client:
 
-```js
+```jsx
 // app/page.js
 "use client";
 
@@ -140,7 +140,7 @@ const PDFToImage = () => {
 export default PDFToImage;
 ```
 
-A few elements to highlight:
+**A few elements to highlight:**
 
 1. We need a global worker for pdf-js to work from a CDN, it does not work with the local build.
 2. We use the browser file reader API to handle the conversion from file to ArrayBuffer.
@@ -150,7 +150,7 @@ Once we send the images to the client, we just need to process them on the backe
 
 ---
 
-### 4. Backend
+## 4. Backend
 
 ```js
 // api/parse_pdf/route.js
@@ -202,14 +202,14 @@ export async function POST(req) {
 }
 ```
 
-A few elements to highlight:
+**A few elements to highlight:**
 
 1. We don't need to install any OpenAI library, we can just send a POST request directly.
 2. We need to convert our base 64 images to a format recognized by OpenAI (generatePrompt function)
 
 ---
 
-### 5. Deployment to Vercel
+## 5. Deployment to Vercel
 
 After creating and deploying the project to Vercel, There is one missing problem, this error:
 
@@ -238,4 +238,4 @@ After this, the deployment is working.
 
 Hope it helped!
 
-[insert gift]
+![yay](https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExYWUwbnp5dDU2MDNxYW56bmJwOWE4ZWYzNHRyOTJ1YWJlbWxrNGxxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/sVnKj2wDhUTsFKFWhx/giphy.gif)

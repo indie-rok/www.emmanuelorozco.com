@@ -234,6 +234,10 @@ ul.blog-posts li {
   display: flex;
 }
 
+ul.blog-posts li::marker {
+  color: var(--indian-red);
+}
+
 ul.blog-posts li span {
   flex: 0 0 130px;
 }
@@ -345,6 +349,10 @@ ul.discover-posts li small a {
 
   .link-tags {
     color: var(--ecru);
+  }
+
+  ul.blog-posts li::marker {
+    color: var(--light-green);
   }
 }
 
