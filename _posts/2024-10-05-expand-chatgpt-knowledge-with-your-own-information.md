@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Expand ChatGPT knowledge with your own information
-date: 2024-11-05 18:30:00 +0000
+date: 2024-11-04 18:30:00 +0000
 tags:
   - python
   - ai
