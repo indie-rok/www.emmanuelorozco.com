@@ -30,13 +30,13 @@ To train LLMs, engineers have compressed the whole of humanity's knowledge using
 
 However, they have 2 big problems:
 
-1. Outdated information
+**1. Outdated information**
 
 Last snapshot used to train ChatGPT is from October 2023 (now it's November 2024) that means we have a few months lost of data while generating responses.
 
 ![last-snapshot](https://emmanuelorozco.com/assets/blog/rag/october-2023.png)
 
-2. Lack of specialized knowledge
+**2. Lack of specialized knowledge**
 
 As mentioned, LLMs are trained with public available data, that means, if you have private information (information on how to run a process, specific domain information, etc) LLMs will not work as expected.
 
@@ -46,17 +46,17 @@ As mentioned, LLMs are trained with public available data, that means, if you ha
 
 So, if LLMs are out of date, what can we do about it? How can we update the information?
 
-1. Fine tunning
-   That means basically, re-train the whole model using new data (like reshaping a sculpture). We do this when we require the LLM to behave in a particular way (talk like trump, compose a new rap song).
+- Fine tunning
+  That means basically, re-train the whole model using new data (like reshaping a sculpture). We do this when we require the LLM to behave in a particular way (talk like trump, compose a new rap song).
 
 ![Fine Tunning description](https://emmanuelorozco.com/assets/blog/rag/fine-tune.png)
 
 This is usually very expensive because it requires obtaining, cleaning, and processing all this new information. (requires computing and men's power).
 
-2. RAG (**Retrieval augmented Generation**)
-   When using RAG, we don't need to reshape the sculpture or re train or model, we simply need to **provide more information** (also called knowladge base embedding), while making a question to the LLM. Then the LLM will use this information to compute a more up-to-date-answer.
+- RAG (**Retrieval augmented Generation**)
+  When using RAG, we don't need to reshape the sculpture or re train or model, we simply need to **provide more information** (also called knowladge base embedding), while making a question to the LLM. Then the LLM will use this information to compute a more up-to-date-answer.
 
-![RAG Diagram](https://emmanuelorozco.com/assets/blog/rag/fine-tune.png)
+![RAG Diagram](https://emmanuelorozco.com/assets/blog/rag/rag.png)
 
 ## Preparing Data for RAG
 
@@ -93,7 +93,11 @@ In an emmbeding model, we classify information **depending how close is to each 
 
 ![Text embeddings](https://emmanuelorozco.com/assets/blog/rag/text-emb.png)
 
+In the example above, notice how the ships are together, celestial bodies are together, etc.
+
 We use an array of numbers to represent this proximity.
+
+![Numbers](https://emmanuelorozco.com/assets/blog/rag/numbers.png)
 
 That way when we provide a word to this model (i.e diabetes), we don't need to look to all documents, the embed model will automatically return the documents that are close to this word (i.e diabetes will return diseases, insulin, sugar, etc)
 
