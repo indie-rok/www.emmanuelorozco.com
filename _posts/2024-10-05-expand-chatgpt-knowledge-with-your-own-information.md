@@ -19,10 +19,11 @@ tags:
 4. [Preparing Data for RAG](#backend)
 5. [Embbeding models](#backend)
 6. [Code Example]()
+7. [Conclusion]()
 
 ---
 
-## 1. Why do we need to train an LLM (ChatGPT, Claude, Ollama, etc) with our own data?
+## 1. Why must we train an LLM (ChatGPT, Claude, Ollama, etc) with our private data?
 
 To train LLMs, engineers have compressed the whole of humanity's knowledge using public documents on the internet:
 
@@ -32,35 +33,37 @@ However, they have 2 big problems:
 
 **1. Outdated information**
 
-Last snapshot used to train ChatGPT is from October 2023 (now it's November 2024) that means we have a few months lost of data while generating responses.
+The last snapshot used to train ChatGPT is from October 2023 (now it's November 2024), which means we lost a few months of data while generating responses.
 
 ![last-snapshot](https://emmanuelorozco.com/assets/blog/rag/october-2023.png)
 
 **2. Lack of specialized knowledge**
 
-As mentioned, LLMs are trained with public available data, that means, if you have private information (information on how to run a process, specific domain information, etc) LLMs will not work as expected.
+As mentioned, LLMs are trained with publicly available data. That means if you have private information (information on how to run a process, specific domain information, etc.), LLMs will not work as expected.
 
 ![Lack of knowledge description](https://emmanuelorozco.com/assets/blog/rag/emmanuel-orozco.png)
 
 ## 2. Expanding LLMs knowledge
 
-So, if LLMs are out of date, what can we do about it? How can we update the information?
+So, if LLMs are outdated, what can we do about it? How can we update the information?
 
-- Fine tunning
-  That means basically, re-train the whole model using new data (like reshaping a sculpture). We do this when we require the LLM to behave in a particular way (talk like trump, compose a new rap song).
+### 1. Fine Tunning
+
+That means basically, re-train the whole model using new data (like reshaping a sculpture). We do this when we require the LLM to behave in a particular way (talk like trump, compose a new rap song).
 
 ![Fine Tunning description](https://emmanuelorozco.com/assets/blog/rag/fine-tune.png)
 
 This is usually very expensive because it requires obtaining, cleaning, and processing all this new information. (requires computing and men's power).
 
-- RAG (**Retrieval augmented Generation**)
-  When using RAG, we don't need to reshape the sculpture or re train or model, we simply need to **provide more information** (also called knowladge base embedding), while making a question to the LLM. Then the LLM will use this information to compute a more up-to-date-answer.
+### 2. RAG
+
+When using RAG (**Retrieval augmented Generation**), we don't need to reshape the sculpture or re-train or model, we simply need to **provide more information** (also called context), to the LLM while making a question. Then the LLM will use this information to compute a more up-to-date answer.
 
 ![RAG Diagram](https://emmanuelorozco.com/assets/blog/rag/rag.png)
 
 ## Preparing Data for RAG
 
-In a nutshell, to prepare our RAG we need to process our data:
+In a nutshell, to prepare our RAG we need to process our data in the following shape:
 
 1. Gather the documents with the extra information
 2. Convert this documents to plain text (pdf to text, image to text, etc)
@@ -69,19 +72,17 @@ In a nutshell, to prepare our RAG we need to process our data:
 
 ![Data Process](https://emmanuelorozco.com/assets/blog/rag/data-process.jpg)
 
-After doing this, we only need to provide the LLM with the right context based on the user's query.
+After doing this, when making a question, we need to create an RAG module that will search (in the knowledge base), for the correct aditional information and add it as context to the prompt. (retriever).
 
 ![Data Process](https://emmanuelorozco.com/assets/blog/rag/rag-module.png)
 
 ## What is an embedding model and why do we need them?
 
-We need to store our specialized information in a format that the LLM can understand. (LLMS can only understand text, not video or audio).
+We need to store our specialized information in a format that the LLM can understand. (LLMs can only understand text, not video or audio).
 
 And we need to store this data efficiently.
 
-Imagine you have 20,000 private PDFs of medical records about patients. ChatGPT does not know about this and you want to ask GPT about a trend in this data.
-
-![Text embeddings](https://emmanuelorozco.com/assets/blog/rag/20k.jpg)
+Imagine you have 20,000 private PDFs of information about animal behavior (You work in a Zoo). ChatGPT does not know about this information and you want to ask GPT about a trend in this data.
 
 Without an emmbeding model, you would need to store PDFs in database and when a question comes in to the the LLMs, look **one-by-one** document until you find an answer.
 
@@ -89,33 +90,40 @@ Without an emmbeding model, you would need to store PDFs in database and when a 
 
 This takes a lot of time to compute, instead, we can use an embedding model and a vectorized database.
 
-In an emmbeding model, we classify information **depending how close is to each other**, using the DB records and the user question as reference.
+In an embedding model, we classify information **depending on how close is to each other**, using the DB records and the user question as reference.
 
 ![Text embeddings](https://emmanuelorozco.com/assets/blog/rag/text-emb.png)
 
-In the example above, notice how the ships are together, celestial bodies are together, etc.
+In the example above, notice how the animals, ships or celestial bodies are together.
 
 We use an array of numbers to represent this proximity.
 
 ![Numbers](https://emmanuelorozco.com/assets/blog/rag/numbers.png)
 
-That way when we provide a word to this model (i.e diabetes), we don't need to look to all documents, the embed model will automatically return the documents that are close to this word (i.e diabetes will return diseases, insulin, sugar, etc)
+That way when we provide a word to this model (i.e. elephant), we don't need to look at all documents, the embed model will automatically return the documents that contain this word (i.e. elephant will return animal, forest, big, tree).
 
 And finally we need a vectoraised database to store this embbeded model. (Chroma and Pinecone DB are famous Vector DB engines).
 
 ## Practice time
 
-Let's imagine wanting to help sales generate better email responses to their clients based on top-performing interactions with clients.
+We would like to:
+
+> Help sales reps generate better email responses to their clients based on top-performing interactions with clients.
+
+This means, that when a question comes in, we need to search what similar answers have been given before by top-sales reps in the past and generate a similar answer.
 
 So, we need to:
 
-1. Prepare/load the data with the email interactions [here](sales_data.csv)
-2. Vectorised this data with an embedding model
-3. Do a similarity search (for best practices) when a question comes in
-4. Send a request to ChatGPT with the additional context
-5. Get a response.
+1. Prepare/load the data with the email interactions [download it here](https://emmanuelorozco.com/assets/blog/rag/customer_data.csv)
+2. Create an embedding model (proximity vectors) with email interaction data.
 
-Here is the code step-by-step (is worth mentioning we are using LangChain, to create the responses)
+And when a question comes in:
+
+1. Do a similarity search
+2. Send a request to ChatGPT with the additional context (user question + extra documents retrieved)
+3. Get a response.
+
+Here is the code step-by-step (is worth mentioning we are using [LangChain](https://python.langchain.com/docs/introduction/), (a framework to create AI apps).
 
 ```python
 from langchain.document_loaders.csv_loader import CSVLoader
@@ -129,7 +137,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 1. Load the database with the interactions
-loader = CSVLoader(file_path="sales_response.csv")
+loader = CSVLoader(file_path="customer_data.csv")
 documents = loader.load()
 
 # 2. Vectorise the sales response csv data
@@ -139,16 +147,12 @@ db = FAISS.from_documents(documents, embeddings)
 # 3. Function for similarity search
 def retrieve_info(query):
  similar_response = db.similarity_search(query, k=3)
-
  page_contents_array = [doc.page_content for doc in similar_response]
-
-    # print(page_contents_array)
-
     return page_contents_array
 
 
 #4. Send request to OpenAI with the correct documents as additional context
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
+llm = ChatOpenAI(temperature=0, model="gpt-4o")
 
 template = """
 You are an expert business development representative. I will provide you with a message from a prospect, and your task is to generate the most effective response.
@@ -177,3 +181,9 @@ def generate_response(message):
 generate_response("What are the opening hours?")
 
 ```
+
+## Conclusion
+
+Sometimes we need to train LLMs to give better responses based on our private knowledge, using a technique like RAG will allow us to do it fast and cheap while keeping the quality of the responses.
+
+Thank you! and until the next one!
