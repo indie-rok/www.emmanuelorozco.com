@@ -4,7 +4,7 @@ date: 2025-31-10 18:30:00 +0000
 title: Now
 ---
 
-# Now Nov 2025
+# Nov 2025
 
 ### Living
 
@@ -19,7 +19,7 @@ In Paris, 🇫🇷.
 
 ### Music gear
 - The best electro acoustic guitar in the market [Enya Nex G 2](https://www.enya-music.com/products/nexg-2)
-- [This][https://www.stars-music.fr/ibanez-azes40-prb-standard-purist-blue_181361.html] beautiful Ibanez guitar.
+- [This](https://www.stars-music.fr/ibanez-azes40-prb-standard-purist-blue_181361.html) beautiful Ibanez guitar.
 - [Soundcard 4 channels](https://www.thomann.fr/behringer_umc404hd.htm) 
 - [Grovebox](https://fr.yamaha.com/fr/audio/music-audio-production/products/music-production-studios/seqtrak/)
 - [Mic](shure.com/fr-FR/produits/microphones/sm58)
