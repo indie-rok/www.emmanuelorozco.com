@@ -29,6 +29,8 @@ collections:
   my_tags:
     output: true
     permalink: /tagged/:slug/
+  books:
+    output: true
 defaults:
   -
     scope:
@@ -49,3 +51,4 @@ exclude: [vendor]
 
 Blog: /blog
 Now: /now
+Books: /books
