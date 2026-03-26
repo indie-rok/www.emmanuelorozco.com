@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How AI Agents Work — From a While Loop to OpenClaw</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Libre+Franklin:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* === CSS CUSTOM PROPERTIES === */
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2128;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --accent-purple: #bc8cff;
+            --accent-green: #7ee787;
+            --accent-blue: #79c0ff;
+            --accent-orange: #ffa657;
+            --accent-red: #ff7b72;
+            --accent-cyan: #56d4dd;
+            --border: #30363d;
+
+            --font-display: 'Libre Franklin', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --title-size: clamp(2rem, 6vw, 4.5rem);
+            --h2-size: clamp(1.5rem, 4vw, 3rem);
+            --h3-size: clamp(1.1rem, 2.5vw, 1.75rem);
+            --body-size: clamp(0.8rem, 1.5vw, 1.15rem);
+            --code-size: clamp(0.7rem, 1.2vw, 0.95rem);
+            --small-size: clamp(0.65rem, 1vw, 0.85rem);
+            --slide-padding: clamp(1.5rem, 5vw, 5rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+            --element-gap: clamp(0.25rem, 1vw, 1rem);
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* === VIEWPORT BASE (MANDATORY) === */
+        html, body { height: 100%; overflow-x: hidden; }
+        html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+        .slide {
+            width: 100vw; height: 100vh; height: 100dvh;
+            overflow: hidden; scroll-snap-align: start;
+            display: flex; flex-direction: column; position: relative;
+        }
+        .slide-content {
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
+            max-height: 100%; overflow: hidden; padding: var(--slide-padding);
+        }
+        img, .image-container { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+        @media (max-height: 700px) {
+            :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --content-gap: clamp(0.4rem, 1.5vw, 1rem); --title-size: clamp(1.25rem, 4.5vw, 2.5rem); --h2-size: clamp(1rem, 3vw, 1.75rem); }
+        }
+        @media (max-height: 600px) {
+            :root { --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem); --title-size: clamp(1.1rem, 4vw, 2rem); --body-size: clamp(0.7rem, 1.2vw, 0.95rem); }
+            .nav-dots, .keyboard-hint, .decorative { display: none; }
+        }
+        @media (max-height: 500px) {
+            :root { --slide-padding: clamp(0.4rem, 2vw, 1rem); --title-size: clamp(1rem, 3.5vw, 1.5rem); }
+        }
+        @media (max-width: 600px) { :root { --title-size: clamp(1.25rem, 7vw, 2.5rem); } }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+            html { scroll-behavior: auto; }
+        }
+
+        /* === BASE STYLES === */
+        body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-display); }
+
+        .slide { background: var(--bg-primary); }
+
+        /* === ANIMATIONS === */
+        .reveal { opacity: 0; transform: translateY(25px); transition: opacity var(--duration-normal) var(--ease-out-expo), transform var(--duration-normal) var(--ease-out-expo); }
+        .slide.visible .reveal { opacity: 1; transform: translateY(0); }
+        .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .reveal:nth-child(2) { transition-delay: 0.15s; }
+        .reveal:nth-child(3) { transition-delay: 0.25s; }
+        .reveal:nth-child(4) { transition-delay: 0.35s; }
+        .reveal:nth-child(5) { transition-delay: 0.45s; }
+
+        /* === TITLE SLIDE === */
+        .title-slide { justify-content: center; align-items: center; text-align: center; }
+        .title-slide h1 { font-size: var(--title-size); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: var(--element-gap); }
+        .title-slide .subtitle { font-size: var(--body-size); color: var(--text-secondary); font-weight: 300; }
+        .title-slide .author { font-size: var(--small-size); color: var(--text-muted); margin-top: var(--content-gap); font-family: var(--font-mono); }
+
+        /* === SECTION SLIDES === */
+        .section-slide { justify-content: center; align-items: center; text-align: center; }
+        .section-number { font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-purple); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: var(--element-gap); }
+        .slide h2 { font-size: var(--h2-size); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: var(--content-gap); }
+        .slide h3 { font-size: var(--h3-size); font-weight: 600; margin-bottom: var(--element-gap); }
+        .slide p { font-size: var(--body-size); color: var(--text-secondary); line-height: 1.6; max-width: 720px; }
+
+        /* === CODE BLOCKS === */
+        .code-block {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;
+            padding: clamp(0.75rem, 2vw, 1.5rem); font-family: var(--font-mono);
+            font-size: var(--code-size); line-height: 1.65; overflow: hidden;
+            max-width: min(90vw, 700px); width: 100%;
+        }
+        .code-block .kw { color: var(--accent-purple); }
+        .code-block .fn { color: var(--accent-blue); }
+        .code-block .str { color: var(--accent-green); }
+        .code-block .cm { color: var(--text-muted); }
+        .code-block .op { color: var(--accent-orange); }
+        .code-block .var { color: var(--accent-red); }
+
+        /* === HIGHLIGHT BOX === */
+        .highlight-box {
+            background: var(--bg-card); border-left: 3px solid var(--accent-purple);
+            padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.75rem, 2vw, 1.5rem);
+            border-radius: 0 6px 6px 0; margin: var(--element-gap) 0;
+            font-size: var(--body-size); max-width: 700px;
+        }
+        .highlight-box strong { color: var(--accent-orange); }
+
+
+        /* === LAYOUT HELPERS === */
+        .split { display: flex; gap: var(--content-gap); align-items: center; flex: 1; }
+        .split > * { flex: 1; }
+        @media (max-width: 768px) { .split { flex-direction: column; } }
+        .center { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .center .code-block, .center .code-collapsible, .center .code-stack { text-align: left; }
+        .gap { gap: var(--content-gap); }
+        .gap-sm { gap: var(--element-gap); }
+        .mt { margin-top: var(--content-gap); }
+
+        /* === TOOL CARDS === */
+        .tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--element-gap); max-width: 500px; }
+        .tool-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+            padding: clamp(0.4rem, 1vw, 0.75rem) clamp(0.6rem, 1.5vw, 1rem);
+            font-family: var(--font-mono); font-size: var(--code-size); color: var(--accent-green);
+        }
+
+        /* === CHANNEL PILLS === */
+        .channel-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .channel {
+            padding: 4px 14px; border-radius: 20px; font-size: var(--small-size); font-weight: 600;
+        }
+        .channel.wa { background: #25d366; color: #000; }
+        .channel.tg { background: #0088cc; color: #fff; }
+        .channel.sl { background: #4a154b; color: #fff; }
+        .channel.dc { background: #5865f2; color: #fff; }
+        .channel.more { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
+
+        /* === PROGRESS BAR === */
+        .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent-purple); z-index: 1000; transition: width 0.3s; width: 0; }
+
+        /* === NAV DOTS === */
+        .nav-dots { position: fixed; right: clamp(8px, 1.5vw, 20px); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+        .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); cursor: pointer; transition: background 0.3s, transform 0.3s; border: none; padding: 0; }
+        .nav-dot.active { background: var(--accent-purple); transform: scale(1.4); }
+
+        /* === EDIT MODE === */
+        .edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+        .edit-toggle {
+            position: fixed; top: 12px; left: 12px; background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-size: 14px;
+            cursor: pointer; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+        [contenteditable="true"] { outline: 2px dashed var(--accent-purple); outline-offset: 4px; border-radius: 4px; }
+
+        /* === ACCENT LINE === */
+        .slide::before {
+            content: ''; position: absolute; left: 0; top: 0; width: 3px; height: 100%;
+            background: linear-gradient(to bottom, var(--accent-purple), transparent);
+            opacity: 0.3;
+        }
+
+        /* === GREEN EMPHASIS === */
+        .em-green { color: var(--accent-green); }
+
+        /* === COLLAPSIBLE PREVIOUS CODE === */
+        .code-collapsible { margin-bottom: 8px; max-width: min(90vw, 700px); width: 100%; }
+        .code-collapsible summary {
+            font-family: var(--font-mono); font-size: var(--small-size); color: var(--text-muted);
+            cursor: pointer; padding: 6px 12px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 6px 6px 0 0; list-style: none; display: flex; align-items: center; gap: 6px;
+        }
+        .code-collapsible summary::before { content: '▶'; font-size: 10px; transition: transform 0.2s; }
+        .code-collapsible[open] summary::before { transform: rotate(90deg); }
+        .code-collapsible[open] summary { border-radius: 6px 6px 0 0; border-bottom: none; }
+        .code-collapsible .code-block { border-radius: 0 0 8px 8px; border-top: 1px dashed var(--border); opacity: 0.7; margin: 0; }
+        .code-collapsible + .code-block { border-radius: 0 0 8px 8px; }
+        .code-new { border-top: none; border-radius: 0 0 8px 8px; }
+        .code-stack { max-width: min(90vw, 700px); width: 100%; }
+        .code-stack .code-block:first-child { border-radius: 8px 8px 0 0; }
+        .code-stack .code-block:last-child { border-radius: 0 0 8px 8px; }
+
+        /* === INTERACTIVE EMBED === */
+        .embed-frame { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; width: min(95vw, 800px); height: min(70vh, 520px); }
+        .embed-frame iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <nav class="nav-dots" id="navDots"></nav>
+    <div class="edit-hotzone"></div>
+    <button class="edit-toggle" id="editToggle" title="Edit mode (E)">Edit</button>
+
+    <!-- === SLIDE 1: TITLE === -->
+    <section class="slide title-slide">
+        <div class="slide-content center">
+            <h1 class="reveal">How AI Agents Work?</h1>
+            <p class="reveal">From while to wow!</p>
+            <p class="author reveal">by - Emmanuel Orozco 🎸</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 2: WHY === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <p class="section-number reveal">01 / Why</p>
+            <h2 class="reveal">I use OpenClaw every day.</h2>
+            <p class="reveal">Coding. Marketing. Automating random stuff.</p>
+            <p class="reveal" style="color: var(--accent-orange);">But it always felt like a <strong>magic box</strong>.</p>
+            <div class="highlight-box reveal">
+                <strong>I broke my installation 5 times.</strong><br>Had to start from scratch each time.
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 3: HACKATHON === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">01 / Why</p>
+            <h2 class="reveal">Two hackathons ago,<br>I decided to understand it.</h2>
+            <p class="reveal" style="max-width: 500px;">After a few coffees and a lot of reading...</p>
+            <p class="reveal" style="color: var(--accent-green); font-size: var(--h3-size); font-weight: 600;">Agents are surprisingly simple.</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 4: THE PROBLEM === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <p class="section-number reveal">02 / The Problem</p>
+            <h2 class="reveal">LLMs alone only talk <span style="color: var(--accent-green)"> talk </span> talk.</h2>
+            <p class="reveal">ChatGPT gives you the code. Then what?</p>
+            <div class="highlight-box reveal">
+                <strong>You</strong> copy-paste it. <strong>You</strong> run it. <strong>You</strong> check if it works.<br>
+                <strong>You</strong> go back and forth.
+            </div>
+            <p class="reveal" style="color: var(--accent-red); font-weight: 600; font-size: var(--h3-size);">You are the blocker.</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 5: AGENTS === -->
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">03 / The Agent World</p>
+            <h2 class="reveal">Agents do <span style="color: var(--accent-green)">do</span> do.</h2>
+            <div class="highlight-box reveal">
+                <strong>Read</strong>  the file.<br>
+                <strong>Run</strong> the tests.<br>
+                <strong>Tell</strong> me when it's done<br>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 6: THE LOOP CODE === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">It's a while loop.</h2>
+            <div class="code-block reveal">
+<span class="kw">while</span> <span class="var">True</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;response = <span class="fn">llm</span>(messages, tools)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> response.stop_reason != <span class="str">"tool_use"</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">break</span> &nbsp;<span class="cm"># done</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;result = <span class="fn">execute</span>(response.tool_call)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;messages.<span class="fn">append</span>(result) &nbsp;<span class="cm"># loop continues</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 7: INTERACTIVE DIAGRAM === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">Let's <span class="em-green">see</span> it work.</h2>
+            <div class="embed-frame reveal">
+                <iframe src="assets/blog/agents/messages-loop.html"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 8: TOOLS INTRO === -->
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">04 / Tools</p>
+            <h2 class="reveal">A loop with no capabilities is <span class="em-green">useless</span>.</h2>
+            <p class="reveal">Every computer has the most powerful tool. You use it every day.</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 8b: THE TERMINAL === -->
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="reveal" style="color: var(--accent-cyan); font-size: var(--title-size); font-weight: 800;">The terminal.</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 9: A TOOL IS A FUNCTION === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">A tool is a <span class="em-green">function</span>.</h2>
+            <p class="reveal" style="color: var(--text-secondary);">Clear inputs. Clear outputs. Guardrails.</p>
+            <div class="code-block reveal">
+<span class="kw">def</span> <span class="fn">run_bash</span>(command):<br>
+&nbsp;&nbsp;<span class="cm"># guardrails</span><br>
+&nbsp;&nbsp;dangerous = [<span class="str">"rm -rf /"</span>, <span class="str">"sudo"</span>, <span class="str">"shutdown"</span>]<br>
+&nbsp;&nbsp;<span class="kw">if</span> <span class="fn">any</span>(d <span class="kw">in</span> command <span class="kw">for</span> d <span class="kw">in</span> dangerous):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="str">"Error: blocked"</span><br>
+&nbsp;&nbsp;<span class="cm"># clear input → clear output</span><br>
+&nbsp;&nbsp;result = subprocess.<span class="fn">run</span>(command, shell=<span class="op">True</span>)<br>
+&nbsp;&nbsp;<span class="kw">return</span> result.stdout
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 10: DISPATCH MAP (INTERACTIVE) === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">Inside <span class="em-green">execute()</span>.</h2>
+            <div class="embed-frame reveal">
+                <iframe src="assets/blog/agents/tool-dispatch.html"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 11: THE BRAIN === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <p class="section-number reveal">05 / The Brain</p>
+            <h2 class="reveal">How does it <span class="em-green">know</span><br>what command to run?</h2>
+            <p class="reveal" style="color: var(--accent-purple); font-size: var(--h2-size); font-weight: 800;">It's an LLM.</p>
+            <p class="reveal">Better LLM = <span class="em-green">better agent</span>.</p>
+        </div>
+    </section>
+
+
+    <!-- === SLIDE 13: SKILLS — THE PROBLEM === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <p class="section-number reveal">06 / Skills</p>
+            <h2 class="reveal">What if the task needs<br><span class="em-green">specialized knowledge</span>?</h2>
+            <div class="code-block reveal" style="max-width: 600px;">
+<span class="cm"># User asks:</span><br>
+<span class="str">"Fix the bug following our conventions"</span><br><br>
+<span class="cm"># LLM thinks:</span><br>
+<span class="var">"...what conventions?"</span> <span class="cm"># has tools, but no knowledge</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 14: SKILLS — LAYER 1 (THE MENU) === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">The <span class="em-green">table of contents</span>.</h2>
+            <div class="split reveal" style="max-width: 750px; align-items: flex-start;">
+                <div>
+                    <p style="color: var(--text-muted); font-size: var(--small-size); margin-bottom: 8px;">skills/</p>
+                    <div class="code-block" style="font-size: var(--code-size);">
+coding-conventions/<span class="str">SKILL.md</span><br>
+github/<span class="str">SKILL.md</span><br>
+browser/<span class="str">SKILL.md</span><br>
+deploy/<span class="str">SKILL.md</span>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: var(--small-size); margin-top: 8px;">&darr; <span class="fn" style="color: var(--accent-cyan);">get_descriptions()</span> scans all</p>
+                </div>
+                <div>
+                    <p style="color: var(--text-muted); font-size: var(--small-size); margin-bottom: 8px;">Added to system prompt:</p>
+                    <div class="code-block" style="font-size: var(--code-size);">
+<span class="str">"""Skills available:</span><br>
+<span class="str">&nbsp;&nbsp;- coding-conventions:</span><br>
+<span class="str">&nbsp;&nbsp;&nbsp;&nbsp;Our team's rules</span><br>
+<span class="str">&nbsp;&nbsp;- github:</span><br>
+<span class="str">&nbsp;&nbsp;&nbsp;&nbsp;Manage repos, PRs</span><br>
+<span class="str">&nbsp;&nbsp;- browser:</span><br>
+<span class="str">&nbsp;&nbsp;&nbsp;&nbsp;Control Chrome via CDP</span><br>
+<span class="str">&nbsp;&nbsp;- deploy:</span><br>
+<span class="str">&nbsp;&nbsp;&nbsp;&nbsp;Deploy to production"""</span>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: var(--small-size); margin-top: 8px;">~100 tokens per skill. Cheap.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 15: SKILLS — LAYER 2 (LOAD ON DEMAND) === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">Open the <span class="em-green">chapter</span>.</h2>
+            <p class="reveal" style="color: var(--text-secondary);">LLM reads the menu, picks what it needs:</p>
+            <div class="code-block reveal" style="max-width: 600px;">
+<span class="cm"># LLM calls (just another tool!):</span><br>
+<span class="fn">load_skill</span>(<span class="str">"coding-conventions"</span>)<br><br>
+<span class="cm"># Gets injected into conversation:</span><br>
+&lt;<span class="var">skill</span>&gt;<br>
+&nbsp;&nbsp;Always use async/await.<br>
+&nbsp;&nbsp;Never use var, use const/let.<br>
+&nbsp;&nbsp;Run tests before committing.<br>
+&nbsp;&nbsp;Max 200 lines per file.<br>
+&lt;/<span class="var">skill</span>&gt;
+            </div>
+            <p class="reveal" style="color: var(--accent-cyan); font-size: var(--small-size); font-family: var(--font-mono);">load_skill is just another tool in the dispatch map</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE: SKILLS IN THE LOOP (INTERACTIVE) === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">Let's <span class="em-green">see</span> it in the loop.</h2>
+            <div class="embed-frame reveal">
+                <iframe src="assets/blog/agents/skill-loading.html"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 15: SKILLS VS TOOLS === -->
+    <section class="slide section-slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">Skills vs Tools</h2>
+            <div class="split reveal" style="max-width: 700px; text-align: left; gap: var(--content-gap); align-items: center;">
+                <div style="border-left: 3px solid var(--accent-green); padding-left: 16px;">
+                    <p style="font-size: var(--h3-size); font-weight: 800;"><span class="em-green">Tools</span></p>
+                    <p style="font-size: var(--body-size);"><span class="em-green">Executable functions</span>. When called, something <span class="em-green">happens</span>: a file gets <span class="em-green">written</span>, an API gets <span class="em-green">hit</span>.</p>
+                    <p style="color: var(--accent-green); font-weight: 600;">The hands that <strong>do</strong> things.</p>
+                </div>
+                <div style="border-left: 3px solid var(--accent-cyan); padding-left: 16px;">
+                    <p style="font-size: var(--h3-size); color: var(--accent-cyan); font-weight: 800;">Skills</p>
+                    <p style="font-size: var(--body-size);">Packaged expertise. Context, instructions, domain knowledge that makes the agent better.</p>
+                    <p style="color: var(--text-muted);">The training that <strong>knows</strong> things.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE: WRAP-UP DIAGRAM === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">Everything so far.</h2>
+            <div class="embed-frame reveal">
+                <iframe src="assets/blog/agents/wrapup-diagram.html"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 16: MORE CONCEPTS === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <p class="section-number reveal">07 / And more...</p>
+            <h2 class="reveal">Two more <span class="em-green">pieces</span>.</h2>
+            <div class="highlight-box reveal">
+                <strong>TodoWrite</strong> &mdash; The agent keeps a checklist. A nag system reminds it.
+            </div>
+            <div class="highlight-box reveal" style="border-color: var(--accent-blue);">
+                <strong>Subagents</strong> &mdash; Child agents with isolated context. Same files, different conversation.
+            </div>
+            <p class="reveal" style="font-family: var(--font-mono); color: var(--text-muted);">12 stages total &rarr; learn.shareai.run</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 17: TRANSITION === -->
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">08 / OpenClaw</p>
+            <h2 class="reveal">How to <span class="em-green">scale</span>?</h2>
+            <p class="reveal" style="font-size: var(--h3-size); color: var(--text-secondary);">Parallel agents. More skills. More channels.</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 18: THE FORMULA === -->
+    <section class="slide section-slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">OpenClaw =</h2>
+            <div class="reveal" style="font-family: var(--font-mono); font-size: var(--h3-size); line-height: 2.2;">
+                <span style="color: var(--accent-purple);">Agent Loop</span> <span style="color: var(--text-muted); font-size: var(--body-size);">(what we just learned)</span><br>
+                + <span class="em-green">Gateway</span> <span style="color: var(--text-muted); font-size: var(--body-size);">(routes WhatsApp, Slack, Discord...)</span><br>
+                + <span style="color: var(--accent-orange);">Memory</span> <span style="color: var(--text-muted); font-size: var(--body-size);">(remembers across sessions)</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE 19: GATEWAY === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <h2 class="reveal">The <span class="em-green">Gateway</span>.</h2>
+            <p class="reveal">A WebSocket server.</p>
+          
+        </div>
+    </section>
+
+    <!-- === SLIDE: GATEWAY DIAGRAM === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <div class="embed-frame reveal">
+                <iframe src="assets/blog/agents/gateway-diagram.html"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE: MEMORY TEXT === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <h2 class="reveal"><span style="color: var(--accent-orange);">Memory</span>.</h2>
+            <p class="reveal">The agent <span class="em-green">remembers</span> across sessions.</p>
+            <p class="reveal" style="color: var(--text-secondary);">Each agent has its own isolated memory. No sharing between agents.</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE: MEMORY DIAGRAM === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <div class="embed-frame reveal">
+                <iframe src="assets/blog/agents/memory-diagram.html"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE: THE FULL PICTURE === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">The full picture.</h2>
+            <div class="embed-frame reveal">
+                <iframe src="assets/blog/agents/full-diagram.html"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SLIDE: WORKSPACE FILES === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <h2 class="reveal">And speaking about <span class="em-green">injecting files</span>...</h2>
+            <p class="reveal" style="color: var(--text-secondary);">Every session loads these from the workspace:</p>
+            <div class="code-block reveal" style="max-width: 600px;">
+<span class="str">~/.openclaw/workspace/</span><br>
+<br>
+<span class="fn">AGENTS.md</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># rules, priorities, how to behave</span><br>
+<span class="fn">SOUL.md</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># persona, tone, boundaries</span><br>
+<span class="fn">USER.md</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># who you are</span><br>
+<span class="fn">TOOLS.md</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># local tool conventions</span><br>
+<span class="fn">IDENTITY.md</span>&nbsp;<span class="cm"># agent name, vibe</span><br>
+<span class="fn">MEMORY.md</span>&nbsp;&nbsp;&nbsp;<span class="cm"># long-term curated facts</span><br>
+<span class="cyan">memory/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># daily logs (YYYY-MM-DD.md)</span><br>
+<span class="cyan">skills/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># workspace-specific skills</span>
+            </div>
+            <p class="reveal" style="color: var(--text-muted); font-size: var(--small-size);">Plain markdown. You can edit them yourself.</p>
+        </div>
+    </section>
+
+
+    <!-- === SLIDE: DEMO === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">OpenClaw in <span class="em-green">action</span>.</h2>
+            <img src="assets/blog/agents/open-claw-example.png" alt="OpenClaw showing tool calls" class="reveal" style="max-height: min(60vh, 420px); border-radius: 10px; border: 1px solid var(--border);"/>
+            <p class="reveal" style="color: var(--text-muted); font-size: var(--small-size);">Tools firing, memory search, exec — the loop in real life.</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 25: THANKS === -->
+    <section class="slide title-slide">
+        <div class="slide-content center gap-sm">
+            <h1 class="reveal">Thanks!</h1>
+            <div class="reveal" style="display: flex; gap: clamp(2rem, 5vw, 5rem); align-items: center; margin-top: var(--content-gap);">
+                <div style="text-align: center;">
+                    <img src="assets/blog/agents/qr-substack.png" alt="Substack QR" style="width: min(25vw, 160px); height: auto; border-radius: 8px;"/>
+                    <p style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: var(--small-size); margin-top: 8px;">Substack</p>
+                </div>
+                <div style="text-align: center;">
+                    <img src="assets/blog/agents/qr-linkedin.png" alt="LinkedIn QR" style="width: min(25vw, 160px); height: auto; border-radius: 8px;"/>
+                    <p style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: var(--small-size); margin-top: 8px;">LinkedIn</p>
+                </div>
+            </div>
+            <p class="subtitle reveal">emmanuelorozco.com</p>
+        </div>
+    </section>
+
+    <script>
+        /* === SLIDE PRESENTATION CONTROLLER === */
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.currentSlide = 0;
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupProgressBar();
+                this.setupNavDots();
+            }
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const idx = Array.from(this.slides).indexOf(entry.target);
+                            this.currentSlide = idx;
+                            this.updateProgress();
+                            this.updateDots();
+                        }
+                    });
+                }, { threshold: 0.5 });
+                this.slides.forEach(s => observer.observe(s));
+            }
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.target.getAttribute('contenteditable')) return;
+                    if (['ArrowDown','ArrowRight','Space','PageDown'].includes(e.code)) { e.preventDefault(); this.next(); }
+                    if (['ArrowUp','ArrowLeft','PageUp'].includes(e.code)) { e.preventDefault(); this.prev(); }
+                });
+            }
+            setupTouchNav() {
+                let startY = 0;
+                document.addEventListener('touchstart', e => startY = e.touches[0].clientY, { passive: true });
+                document.addEventListener('touchend', e => {
+                    const diff = startY - e.changedTouches[0].clientY;
+                    if (Math.abs(diff) > 50) diff > 0 ? this.next() : this.prev();
+                }, { passive: true });
+            }
+            setupProgressBar() { this.progressBar = document.getElementById('progressBar'); }
+            setupNavDots() {
+                const nav = document.getElementById('navDots');
+                this.dots = [];
+                this.slides.forEach((_, i) => {
+                    const dot = document.createElement('button');
+                    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+                    dot.addEventListener('click', () => this.goTo(i));
+                    nav.appendChild(dot);
+                    this.dots.push(dot);
+                });
+            }
+            next() { if (this.currentSlide < this.slides.length - 1) this.goTo(this.currentSlide + 1); }
+            prev() { if (this.currentSlide > 0) this.goTo(this.currentSlide - 1); }
+            goTo(i) { this.slides[i].scrollIntoView({ behavior: 'smooth' }); }
+            updateProgress() { this.progressBar.style.width = ((this.currentSlide + 1) / this.slides.length * 100) + '%'; }
+            updateDots() { this.dots.forEach((d, i) => d.classList.toggle('active', i === this.currentSlide)); }
+        }
+        new SlidePresentation();
+
+        /* === INLINE EDITOR === */
+        const editor = {
+            isActive: false,
+            toggleEditMode() {
+                this.isActive = !this.isActive;
+                document.getElementById('editToggle').classList.toggle('active', this.isActive);
+                document.querySelectorAll('h1,h2,h3,p:not(.section-number)').forEach(el => {
+                    el.contentEditable = this.isActive;
+                });
+                if (!this.isActive) {
+                    localStorage.setItem('slides-agents-openclaw', document.body.innerHTML);
+                }
+            }
+        };
+        // Restore saved edits
+        const saved = localStorage.getItem('slides-agents-openclaw');
+        if (saved) document.body.innerHTML = saved;
+
+        // Edit toggle interactions
+        document.getElementById('editToggle').addEventListener('click', () => editor.toggleEditMode());
+        const hotzone = document.querySelector('.edit-hotzone');
+        const editToggle = document.getElementById('editToggle');
+        let hideTimeout = null;
+        hotzone.addEventListener('mouseenter', () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); });
+        hotzone.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+        editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+        editToggle.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+        hotzone.addEventListener('click', () => editor.toggleEditMode());
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) editor.toggleEditMode();
+        });
+        /* === LASER POINTER (toggle with L key) === */
+        let laserOn = false;
+        const laser = document.createElement('div');
+        laser.style.cssText = 'position:fixed;width:12px;height:12px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px 4px rgba(239,68,68,0.5),0 0 20px 8px rgba(239,68,68,0.2);pointer-events:none;z-index:99999;display:none;transform:translate(-50%,-50%);transition:opacity 0.15s;';
+        document.body.appendChild(laser);
+        document.addEventListener('mousemove', (e) => {
+            if (laserOn) { laser.style.left = e.clientX + 'px'; laser.style.top = e.clientY + 'px'; }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'l' || e.key === 'L') {
+                if (e.target.getAttribute('contenteditable')) return;
+                laserOn = !laserOn;
+                laser.style.display = laserOn ? 'block' : 'none';
+                document.body.style.cursor = laserOn ? 'none' : '';
+            }
+        });
+    </script>
+</body>
+</html>

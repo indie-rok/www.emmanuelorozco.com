@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Loop: conversation_history[]</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; font-family: 'Menlo', 'Consolas', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .wrapper { display: flex; gap: 20px; align-items: flex-start; padding: 20px; }
+
+  /* === CODE PANEL === */
+  .code-panel { width: 420px; background: #161b22; border: 2px solid #30363d; border-radius: 14px; padding: 18px; }
+  .code-title { color: #8b949e; font-size: 12px; margin-bottom: 12px; }
+  .code-line { padding: 3px 8px; border-radius: 4px; font-size: 11px; line-height: 1.7; color: #8b949e; transition: background 0.3s, color 0.3s; white-space: pre; }
+  .code-line.active { background: #1c2128; color: #e6edf3; outline: 1px solid #8b5cf6; outline-offset: -1px; }
+  .stop-reason { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 6px; margin-top: 8px; opacity: 0; transition: opacity 0.3s; }
+  .stop-reason.show { opacity: 1; }
+  .stop-reason.tool-use { background: #1a4d2e; color: #7ee787; border: 1px solid #22c55e; }
+  .stop-reason.end-turn { background: #3b1218; color: #ff7b72; border: 1px solid #ef4444; }
+  .code-line .kw { color: #bc8cff; }
+  .code-line .fn { color: #79c0ff; }
+  .code-line .str { color: #7ee787; }
+  .code-line .cm { color: #484f58; }
+  .code-line .op { color: #ffa657; }
+  .iter-badge { display: inline-block; background: #8b5cf6; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-top: 10px; opacity: 0; transition: opacity 0.3s; }
+  .iter-badge.show { opacity: 1; }
+
+  /* === MESSAGES PANEL === */
+  .container { width: 340px; padding: 20px; background: #161b22; border: 2px solid #8b5cf6; border-radius: 14px; }
+  .title { color: #8b5cf6; font-size: 16px; margin-bottom: 14px; text-align: center; }
+  .messages { min-height: 320px; display: flex; flex-direction: column; gap: 8px; }
+  .empty { color: #484f58; text-align: center; padding: 130px 0; font-size: 14px; }
+  .msg { padding: 10px 14px; border-radius: 8px; background: #1c2128; border-left: 4px solid; opacity: 0; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.35s ease; }
+  .msg.show { opacity: 1; transform: translateY(0); }
+  .msg .role { font-size: 13px; font-weight: 700; color: #e6edf3; }
+  .msg .detail { font-size: 11px; color: #8b949e; margin-top: 3px; }
+  .msg.user { border-color: #4a9eed; }
+  .msg.assistant { border-color: #8b5cf6; }
+  .msg.tool_result { border-color: #22c55e; }
+  .msg.end { border-color: #ef4444; }
+  .counter { color: #8b5cf6; font-size: 12px; margin-top: 10px; text-align: center; min-height: 18px; }
+  .done-label { color: #ef4444; font-size: 16px; font-weight: 700; text-align: center; margin-top: 6px; opacity: 0; transition: opacity 0.4s; }
+  .done-label.show { opacity: 1; }
+
+  /* === CONTROLS === */
+  .controls { display: flex; gap: 10px; margin-top: 14px; justify-content: center; }
+  button { font-family: inherit; font-size: 13px; padding: 8px 20px; border-radius: 8px; border: 1px solid #30363d; cursor: pointer; transition: background 0.2s; }
+  .btn-next { background: #8b5cf6; color: #fff; border-color: #8b5cf6; }
+  .btn-next:hover { background: #7c3aed; }
+  .btn-next:disabled { opacity: 0.4; cursor: default; }
+  .btn-reset { background: #1c2128; color: #8b949e; }
+  .btn-reset:hover { background: #282e36; }
+  .btn-prev { background: #1c2128; color: #8b949e; border-color: #30363d; }
+  .btn-prev:hover { background: #282e36; }
+  .btn-prev:disabled { opacity: 0.4; cursor: default; }
+  .step-info { color: #8b949e; font-size: 11px; text-align: center; margin-top: 10px; min-height: 32px; line-height: 1.4; }
+
+  @media (max-width: 740px) {
+    .wrapper { flex-direction: column; align-items: center; }
+    .code-panel, .container { width: 95vw; max-width: 400px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <!-- LEFT: CODE -->
+  <div class="code-panel">
+    <div class="code-title">agent_loop.py</div>
+    <div class="code-line" id="L1"><span class="kw">def</span> <span class="fn">agent_loop</span>(query):</div>
+    <div class="code-line" id="L2">  conversation_history = [user_msg(query)]</div>
+    <div class="code-line" id="L3">  <span class="kw">while</span> <span class="op">True</span>:</div>
+    <div class="code-line" id="L4">    llm_answer = <span class="fn">llm</span>(conversation_history, tools)</div>
+    <div class="code-line" id="L5">    conversation_history.<span class="fn">append</span>(llm_answer)</div>
+    <div class="code-line" id="L6">    <span class="kw">if</span> llm_answer.stop != <span class="str">"tool_use"</span>:</div>
+    <div class="code-line" id="L7">      <span class="kw">break</span> <span class="cm"># done</span></div>
+    <div class="code-line" id="L8">    result = <span class="fn">execute</span>(llm_answer.tool)</div>
+    <div class="code-line" id="L9">    conversation_history.<span class="fn">append</span>(result)</div>
+    <div class="iter-badge" id="iterBadge">iteration #1</div>
+    <div class="stop-reason" id="stopReason"></div>
+  </div>
+
+  <!-- RIGHT: MESSAGES -->
+  <div class="container">
+    <div class="messages" id="messages">
+      <div class="empty" id="empty">[ empty ]</div>
+    </div>
+    <div class="counter" id="counter"></div>
+    <div class="done-label" id="doneLabel">Loop exits!</div>
+    <div class="step-info" id="stepInfo">Click Next to start the agent loop</div>
+    <div class="controls">
+      <button class="btn-reset" onclick="reset()">Reset</button>
+      <button class="btn-prev" id="prevBtn" onclick="prev()" disabled>&larr; Prev</button>
+      <button class="btn-next" id="nextBtn" onclick="next()">Next &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  // { msg, activeLines, iteration, stopReason, info }
+  { msg: { role: "user", detail: "Fix the login bug", cls: "user" },
+    activeLines: ["L1","L2"], iteration: 0, stopReason: null,
+    info: "User sends a message. conversation_history[] gets the first entry." },
+
+  { msg: null,
+    activeLines: ["L3","L4"], iteration: 1, stopReason: null,
+    info: "Enter the while loop. Call the LLM with messages + tools." },
+
+  { msg: { role: "assistant", detail: "tool_use: read_file", cls: "assistant" },
+    activeLines: ["L5","L6"], iteration: 1, stopReason: "tool_use",
+    info: "LLM responds. Check stop_reason → tool_use → continue loop!" },
+
+  { msg: null,
+    activeLines: ["L8","L9"], iteration: 1, stopReason: "tool_use",
+    info: "stop_reason is tool_use → skip break. Execute the tool." },
+
+  { msg: { role: "tool_result", detail: "auth.ts contents...", cls: "tool_result" },
+    activeLines: ["L9","L10"], iteration: 1, stopReason: null,
+    info: "Append tool result to messages. Loop back to line 4." },
+
+  { msg: null,
+    activeLines: ["L3","L4"], iteration: 2, stopReason: null,
+    info: "Iteration #2. Call the LLM again with updated messages." },
+
+  { msg: { role: "assistant", detail: "tool_use: edit_file", cls: "assistant" },
+    activeLines: ["L5","L6"], iteration: 2, stopReason: "tool_use",
+    info: "LLM decides to edit the file. stop_reason = tool_use → continue!" },
+
+  { msg: null,
+    activeLines: ["L8","L9"], iteration: 2, stopReason: "tool_use",
+    info: "Execute edit_file tool." },
+
+  { msg: { role: "tool_result", detail: "file updated", cls: "tool_result" },
+    activeLines: ["L9","L10"], iteration: 2, stopReason: null,
+    info: "Append result. Loop back again." },
+
+  { msg: null,
+    activeLines: ["L3","L4"], iteration: 3, stopReason: null,
+    info: "Iteration #3. Call the LLM one more time." },
+
+  { msg: { role: "assistant", detail: "end_turn: Done!", cls: "end" },
+    activeLines: ["L5","L6","L7"], iteration: 3, stopReason: "end_turn",
+    info: "stop_reason = end_turn → BREAK! Loop exits. Task complete." },
+];
+
+let step = -1;
+
+function clearActiveLines() {
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+}
+
+// Rebuild entire UI state for a given step (supports going backwards)
+function renderStep(targetStep) {
+  step = targetStep;
+
+  // Clear messages
+  const msgsEl = document.getElementById('messages');
+  msgsEl.innerHTML = '';
+
+  // Collect all messages up to this step
+  const visibleMsgs = [];
+  for (let i = 0; i <= step; i++) {
+    if (STEPS[i].msg) visibleMsgs.push(STEPS[i].msg);
+  }
+
+  // Render messages
+  if (visibleMsgs.length === 0) {
+    msgsEl.innerHTML = '<div class="empty" id="empty">[ empty ]</div>';
+    document.getElementById('counter').textContent = '';
+  } else {
+    visibleMsgs.forEach(m => {
+      const el = document.createElement('div');
+      el.className = `msg ${m.cls} show`;
+      el.innerHTML = `<div class="role">${m.role}</div><div class="detail">${m.detail}</div>`;
+      msgsEl.appendChild(el);
+    });
+    document.getElementById('counter').textContent = `length: ${visibleMsgs.length}`;
+  }
+
+  // Highlight code lines
+  if (step >= 0) {
+    const s = STEPS[step];
+    clearActiveLines();
+    s.activeLines.forEach(id => document.getElementById(id).classList.add('active'));
+
+    // Iteration badge
+    const badge = document.getElementById('iterBadge');
+    if (s.iteration > 0) {
+      badge.textContent = `iteration #${s.iteration}`;
+      badge.classList.add('show');
+    } else {
+      badge.classList.remove('show');
+    }
+
+    // Stop reason
+    const sr = document.getElementById('stopReason');
+    if (s.stopReason) {
+      sr.textContent = `stop_reason = "${s.stopReason}"`;
+      sr.className = `stop-reason show ${s.stopReason === 'tool_use' ? 'tool-use' : 'end-turn'}`;
+    } else {
+      sr.classList.remove('show');
+    }
+
+    // Step info
+    document.getElementById('stepInfo').textContent = s.info;
+  } else {
+    clearActiveLines();
+    document.getElementById('iterBadge').classList.remove('show');
+    document.getElementById('stopReason').classList.remove('show');
+    document.getElementById('stepInfo').textContent = 'Click Next to start the agent loop';
+  }
+
+  // Done state
+  const isDone = step === STEPS.length - 1;
+  document.getElementById('doneLabel').classList.toggle('show', isDone);
+  document.getElementById('nextBtn').disabled = isDone;
+  document.getElementById('prevBtn').disabled = step < 0;
+}
+
+function next() {
+  if (step < STEPS.length - 1) renderStep(step + 1);
+}
+
+function prev() {
+  if (step >= 0) renderStep(step - 1);
+}
+
+function reset() {
+  renderStep(-1);
+}
+
+</script>
+</body>
+</html>

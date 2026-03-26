@@ -9,3 +9,5 @@ vendor
 _site
 Gemfile.lock
 .DS_Store
+.superpowers
+docs/
