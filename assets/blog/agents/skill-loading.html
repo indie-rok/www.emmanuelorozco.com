@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skill Loading</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; font-family: 'Menlo', 'Consolas', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .wrapper { display: flex; gap: 20px; align-items: flex-start; padding: 20px; }
+
+  .code-panel { width: 440px; background: #161b22; border: 2px solid #30363d; border-radius: 14px; padding: 18px; }
+  .code-title { color: #8b949e; font-size: 12px; margin-bottom: 12px; }
+  .code-line { padding: 3px 8px; border-radius: 4px; font-size: 11px; line-height: 1.7; color: #8b949e; transition: background 0.3s, color 0.3s; white-space: pre; }
+  .code-line.active { background: #1c2128; color: #e6edf3; outline: 1px solid #8b5cf6; outline-offset: -1px; }
+  .code-line.active-green { background: #0d2818; color: #7ee787; outline: 1px solid #22c55e; outline-offset: -1px; }
+  .code-line.active-cyan { background: #0d2830; color: #56d4dd; outline: 1px solid #06b6d4; outline-offset: -1px; }
+  .code-line .kw { color: #bc8cff; }
+  .code-line .fn { color: #79c0ff; }
+  .code-line .str { color: #7ee787; }
+  .code-line .cm { color: #484f58; }
+  .code-line .op { color: #ffa657; }
+  .code-line .var { color: #ff7b72; }
+  .code-line .cyan { color: #56d4dd; }
+  .separator { border: none; border-top: 1px dashed #30363d; margin: 6px 0; }
+
+  .right-panel { width: 320px; }
+  .container { padding: 16px; background: #161b22; border: 2px solid #06b6d4; border-radius: 14px; margin-bottom: 12px; }
+  .panel-title { color: #06b6d4; font-size: 14px; margin-bottom: 12px; }
+  .box { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; min-height: 40px; }
+  .box .label { font-size: 10px; color: #484f58; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .box .value { font-size: 12px; color: #e6edf3; white-space: pre-wrap; }
+  .box .value.muted { color: #484f58; }
+  .skill-body { background: #0d2830; border: 1px solid #06b6d4; border-radius: 8px; padding: 10px 12px; min-height: 40px; opacity: 0; transition: opacity 0.35s; }
+  .skill-body.show { opacity: 1; }
+  .skill-body .label { font-size: 10px; color: #06b6d4; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .skill-body .value { font-size: 11px; color: #56d4dd; white-space: pre-wrap; }
+  .arrow-indicator { text-align: center; color: #06b6d4; font-size: 16px; margin: 4px 0; opacity: 0; transition: opacity 0.3s; }
+  .arrow-indicator.show { opacity: 1; }
+
+  .controls { display: flex; gap: 10px; margin-top: 12px; justify-content: center; }
+  button { font-family: inherit; font-size: 13px; padding: 8px 20px; border-radius: 8px; border: 1px solid #30363d; cursor: pointer; transition: background 0.2s; }
+  .btn-next { background: #8b5cf6; color: #fff; border-color: #8b5cf6; }
+  .btn-next:hover { background: #7c3aed; }
+  .btn-next:disabled { opacity: 0.4; cursor: default; }
+  .btn-prev { background: #1c2128; color: #8b949e; border-color: #30363d; }
+  .btn-prev:hover { background: #282e36; }
+  .btn-prev:disabled { opacity: 0.4; cursor: default; }
+  .btn-reset { background: #1c2128; color: #8b949e; }
+  .btn-reset:hover { background: #282e36; }
+  .step-info { color: #8b949e; font-size: 11px; text-align: center; margin-top: 10px; min-height: 32px; line-height: 1.4; }
+
+  @media (max-width: 780px) {
+    .wrapper { flex-direction: column; align-items: center; }
+    .code-panel, .right-panel { width: 95vw; max-width: 440px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="code-panel">
+    <div class="code-title">The full picture: loop + tools + skills</div>
+    <div class="code-line" id="L1"><span class="cm"># System prompt (with skill menu)</span></div>
+    <div class="code-line" id="L2"><span class="var">SYSTEM</span> = <span class="str">"You are a coding agent."</span></div>
+    <div class="code-line" id="L3"><span class="var">SYSTEM</span> += SKILL_LOADER.<span class="fn">get_descriptions</span>()</div>
+    <div class="code-line" id="L4"><span class="cm"># → "Skills: coding-conventions, github, ..."</span></div>
+    <hr class="separator">
+    <div class="code-line" id="L5"><span class="cm"># Dispatch map (skills = just another tool)</span></div>
+    <div class="code-line" id="L6"><span class="var">TOOL_HANDLERS</span> = {</div>
+    <div class="code-line" id="L7">  <span class="str">"bash"</span>:       <span class="fn">run_bash</span>,</div>
+    <div class="code-line" id="L8">  <span class="str">"read_file"</span>:  <span class="fn">run_read</span>,</div>
+    <div class="code-line" id="L9">  <span class="str">"edit_file"</span>:  <span class="fn">run_edit</span>,</div>
+    <div class="code-line" id="L10">  <span class="cyan">"load_skill"</span>: SKILL_LOADER.<span class="fn">get_content</span>,</div>
+    <div class="code-line" id="L11">}</div>
+    <hr class="separator">
+    <div class="code-line" id="L12"><span class="cm"># The loop (unchanged!)</span></div>
+    <div class="code-line" id="L13"><span class="kw">while</span> <span class="op">True</span>:</div>
+    <div class="code-line" id="L14">  llm_answer = <span class="fn">llm</span>(conversation_history, tools)</div>
+    <div class="code-line" id="L15">  <span class="kw">if</span> llm_answer.stop != <span class="str">"tool_use"</span>: <span class="kw">break</span></div>
+    <div class="code-line" id="L16">  result = <span class="fn">execute</span>(llm_answer.tool)</div>
+    <div class="code-line" id="L17">  conversation_history.<span class="fn">append</span>(result)</div>
+  </div>
+
+  <div class="right-panel">
+    <div class="container">
+      <div class="panel-title">What's happening</div>
+      <div class="box">
+        <div class="label">user task</div>
+        <div class="value" id="userTask" style="color: #4a9eed;">"Fix the bug following our conventions"</div>
+      </div>
+      <div class="box">
+        <div class="label">LLM decides</div>
+        <div class="value muted" id="llmDecides">...</div>
+      </div>
+      <div class="arrow-indicator" id="arrow1">&darr;</div>
+      <div class="box">
+        <div class="label">tool dispatched</div>
+        <div class="value muted" id="toolDispatched">&mdash;</div>
+      </div>
+      <div class="arrow-indicator" id="arrow2">&darr;</div>
+      <div class="skill-body" id="skillBody">
+        <div class="label">injected into conversation</div>
+        <div class="value" id="skillValue"></div>
+      </div>
+    </div>
+    <div class="step-info" id="stepInfo">Click Next — the agent receives a task</div>
+    <div class="controls">
+      <button class="btn-reset" onclick="reset()">Reset</button>
+      <button class="btn-prev" id="prevBtn" onclick="prev()" disabled>&larr; Prev</button>
+      <button class="btn-next" id="nextBtn" onclick="next()">Next &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  { activeLines: ["L2","L3","L4"], activeCyan: ["L3"],
+    decides: null, tool: null, skill: null,
+    info: "System prompt includes the skill menu via get_descriptions(). LLM sees all available skills." },
+
+  { activeLines: ["L13","L14"],
+    decides: '"I need coding-conventions to know the rules"', tool: null, skill: null,
+    info: "Loop starts. LLM reads the task, sees 'our conventions', checks the skill menu." },
+
+  { activeLines: ["L15","L16"],
+    decides: 'load_skill("coding-conventions")', tool: null, skill: null,
+    info: "stop_reason = tool_use. LLM wants to load a skill. Goes to execute()." },
+
+  { activeLines: ["L10","L16"], activeCyan: ["L10"],
+    decides: 'load_skill("coding-conventions")',
+    tool: 'SKILL_LOADER.get_content("coding-conventions")', skill: null,
+    info: "Dispatch map: load_skill → SKILL_LOADER.get_content. Same pattern as bash/read_file!" },
+
+  { activeLines: ["L17"], activeCyan: ["L17"],
+    decides: 'load_skill("coding-conventions")',
+    tool: 'SKILL_LOADER.get_content("coding-conventions")',
+    skill: "Always use async/await.\nNever use var, use const/let.\nRun tests before committing.\nMax 200 lines per file.",
+    info: "Skill body injected into conversation_history. Now the LLM knows the conventions." },
+
+  { activeLines: ["L13","L14"],
+    decides: '"Now I know the rules. Let me read the file."',
+    tool: null, skill: null,
+    info: "Loop continues. LLM now has the knowledge AND the tools. It reads the buggy file." },
+
+  { activeLines: ["L16"],
+    decides: 'read_file("auth.ts")', tool: 'run_read("auth.ts")', skill: null,
+    info: "Same dispatch map, different tool. Skills and tools work together." },
+
+  { activeLines: ["L16"],
+    decides: 'edit_file("auth.ts", ...)', tool: 'run_edit("auth.ts", ...)', skill: null,
+    info: "Fixes the bug following the conventions it just learned. Loop + Tools + Skills." },
+];
+
+let step = -1;
+
+function clearLines() {
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active','active-green','active-cyan'));
+}
+
+function renderStep(target) {
+  step = target;
+  clearLines();
+
+  if (step < 0) {
+    document.getElementById('llmDecides').textContent = '...';
+    document.getElementById('llmDecides').className = 'value muted';
+    document.getElementById('toolDispatched').textContent = '\u2014';
+    document.getElementById('toolDispatched').className = 'value muted';
+    document.getElementById('arrow1').classList.remove('show');
+    document.getElementById('arrow2').classList.remove('show');
+    document.getElementById('skillBody').classList.remove('show');
+    document.getElementById('stepInfo').textContent = 'Click Next — the agent receives a task';
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('prevBtn').disabled = true;
+    return;
+  }
+
+  const s = STEPS[step];
+
+  (s.activeLines || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (s.activeCyan && s.activeCyan.includes(id)) el.classList.add('active-cyan');
+    else el.classList.add('active');
+  });
+
+  if (s.decides) {
+    document.getElementById('llmDecides').textContent = s.decides;
+    document.getElementById('llmDecides').className = 'value';
+  } else {
+    document.getElementById('llmDecides').textContent = '...';
+    document.getElementById('llmDecides').className = 'value muted';
+  }
+
+  document.getElementById('arrow1').classList.toggle('show', !!s.tool);
+  if (s.tool) {
+    document.getElementById('toolDispatched').textContent = s.tool;
+    document.getElementById('toolDispatched').className = 'value';
+  } else {
+    document.getElementById('toolDispatched').textContent = '\u2014';
+    document.getElementById('toolDispatched').className = 'value muted';
+  }
+
+  document.getElementById('arrow2').classList.toggle('show', !!s.skill);
+  if (s.skill) {
+    document.getElementById('skillBody').classList.add('show');
+    document.getElementById('skillValue').textContent = s.skill;
+  } else {
+    document.getElementById('skillBody').classList.remove('show');
+  }
+
+  document.getElementById('stepInfo').textContent = s.info;
+  document.getElementById('nextBtn').disabled = step >= STEPS.length - 1;
+  document.getElementById('prevBtn').disabled = step < 0;
+}
+
+function next() { if (step < STEPS.length - 1) renderStep(step + 1); }
+function prev() { if (step >= 0) renderStep(step - 1); }
+function reset() { renderStep(-1); }
+</script>
+</body>
+</html>

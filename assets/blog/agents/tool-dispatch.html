@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tool Dispatch Map</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; font-family: 'Menlo', 'Consolas', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .wrapper { display: flex; gap: 20px; align-items: flex-start; padding: 20px; }
+
+  /* === CODE PANEL === */
+  .code-panel { width: 380px; background: #161b22; border: 2px solid #30363d; border-radius: 14px; padding: 18px; }
+  .code-title { color: #8b949e; font-size: 12px; margin-bottom: 12px; }
+  .code-line { padding: 3px 8px; border-radius: 4px; font-size: 11px; line-height: 1.7; color: #8b949e; transition: background 0.3s, color 0.3s; white-space: pre; }
+  .code-line.active { background: #1c2128; color: #e6edf3; outline: 1px solid #8b5cf6; outline-offset: -1px; }
+  .code-line.active-green { background: #0d2818; color: #7ee787; outline: 1px solid #22c55e; outline-offset: -1px; }
+  .code-line .kw { color: #bc8cff; }
+  .code-line .fn { color: #79c0ff; }
+  .code-line .str { color: #7ee787; }
+  .code-line .cm { color: #484f58; }
+  .code-line .op { color: #ffa657; }
+  .code-line .var { color: #ff7b72; }
+
+  /* === RIGHT PANEL === */
+  .right-panel { width: 320px; }
+  .container { background: #161b22; border: 2px solid #22c55e; border-radius: 14px; padding: 20px; margin-bottom: 14px; }
+  .title { color: #22c55e; font-size: 14px; margin-bottom: 14px; }
+  .tool-call-box { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-bottom: 10px; min-height: 60px; }
+  .tool-call-box .label { font-size: 10px; color: #484f58; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .tool-call-box .value { font-size: 13px; color: #e6edf3; }
+  .tool-call-box .value.empty { color: #484f58; }
+
+  .result-box { background: #0d2818; border: 1px solid #22c55e; border-radius: 8px; padding: 12px; min-height: 50px; opacity: 0; transition: opacity 0.3s; }
+  .result-box.show { opacity: 1; }
+  .result-box .label { font-size: 10px; color: #22c55e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .result-box .value { font-size: 12px; color: #7ee787; white-space: pre-wrap; }
+
+  .arrow-indicator { text-align: center; color: #8b5cf6; font-size: 18px; margin: 6px 0; opacity: 0; transition: opacity 0.3s; }
+  .arrow-indicator.show { opacity: 1; }
+
+  /* === CONTROLS === */
+  .controls { display: flex; gap: 10px; justify-content: center; }
+  button { font-family: inherit; font-size: 13px; padding: 8px 20px; border-radius: 8px; border: 1px solid #30363d; cursor: pointer; transition: background 0.2s; }
+  .btn-next { background: #8b5cf6; color: #fff; border-color: #8b5cf6; }
+  .btn-next:hover { background: #7c3aed; }
+  .btn-next:disabled { opacity: 0.4; cursor: default; }
+  .btn-reset { background: #1c2128; color: #8b949e; }
+  .btn-reset:hover { background: #282e36; }
+  .btn-prev { background: #1c2128; color: #8b949e; border-color: #30363d; }
+  .btn-prev:hover { background: #282e36; }
+  .btn-prev:disabled { opacity: 0.4; cursor: default; }
+  .step-info { color: #8b949e; font-size: 11px; text-align: center; margin-top: 10px; min-height: 32px; line-height: 1.4; }
+
+  @media (max-width: 740px) {
+    .wrapper { flex-direction: column; align-items: center; }
+    .code-panel, .right-panel { width: 95vw; max-width: 400px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <!-- LEFT: CODE -->
+  <div class="code-panel">
+    <div class="code-line" id="L1"><span class="kw">def</span> <span class="fn">execute</span>(tool_call):</div>
+    <div class="code-line" id="L2">  handler = TOOL_HANDLERS[tool_call.name]</div>
+    <div class="code-line" id="L3">  <span class="kw">return</span> <span class="fn">handler</span>(**tool_call.input)</div>
+    <div class="code-line" id="L4">&nbsp;</div>
+    <div class="code-line" id="L5"><span class="cm"># The dispatch map</span></div>
+    <div class="code-line" id="L6"><span class="var">TOOL_HANDLERS</span> = {</div>
+    <div class="code-line" id="L7">  <span class="str">"bash"</span>:       <span class="fn">run_bash</span>,</div>
+    <div class="code-line" id="L8">  <span class="str">"read_file"</span>:  <span class="fn">run_read</span>,</div>
+    <div class="code-line" id="L9">  <span class="str">"write_file"</span>: <span class="fn">run_write</span>,</div>
+    <div class="code-line" id="L10">  <span class="str">"edit_file"</span>:  <span class="fn">run_edit</span>,</div>
+    <div class="code-line" id="L11">}</div>
+    <div class="code-line" id="L12">&nbsp;</div>
+    <div class="code-line" id="L13"><span class="cm"># Example: what run_read looks like</span></div>
+    <div class="code-line" id="L14"><span class="kw">def</span> <span class="fn">run_read</span>(path):</div>
+    <div class="code-line" id="L15">  text = Path(path).<span class="fn">read_text</span>()</div>
+    <div class="code-line" id="L16">  <span class="kw">return</span> text[:<span class="op">50000</span>] <span class="cm"># cap output</span></div>
+  </div>
+
+  <!-- RIGHT: TOOL CALLS -->
+  <div class="right-panel">
+    <div class="container">
+      <div class="title">LLM says:</div>
+      <div class="tool-call-box">
+        <div class="label">tool_call</div>
+        <div class="value empty" id="toolCall">waiting for LLM...</div>
+      </div>
+      <div class="arrow-indicator" id="arrow1">&#8595; dispatch</div>
+      <div class="tool-call-box">
+        <div class="label">handler</div>
+        <div class="value empty" id="handler">—</div>
+      </div>
+      <div class="arrow-indicator" id="arrow2">&#8595; execute</div>
+      <div class="result-box" id="resultBox">
+        <div class="label">result</div>
+        <div class="value" id="resultValue"></div>
+      </div>
+    </div>
+    <div class="step-info" id="stepInfo">Click Next — the LLM will call tools</div>
+    <div class="controls">
+      <button class="btn-reset" onclick="reset()">Reset</button>
+      <button class="btn-prev" id="prevBtn" onclick="prev()" disabled>&larr; Prev</button>
+      <button class="btn-next" id="nextBtn" onclick="next()">Next &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  // Step 0: Show execute() function
+  { activeLines: ["L1","L2","L3"],
+    toolCall: null, handler: null, result: null,
+    info: "Remember execute() from the loop? This is what's inside it." },
+
+  // Step 1: LLM calls read_file — enter execute()
+  { activeLines: ["L1","L2"],
+    toolCall: { name: "read_file", input: '{ "path": "auth.ts" }' },
+    handler: null, result: null,
+    info: 'execute() receives tool_call.name = "read_file". Look it up in TOOL_HANDLERS.' },
+
+  // Step 2: Dispatch to handler
+  { activeLines: ["L2","L8"], activeGreen: ["L8"],
+    toolCall: { name: "read_file", input: '{ "path": "auth.ts" }' },
+    handler: "run_read", result: null,
+    info: 'TOOL_HANDLERS["read_file"] → run_read. Found it!' },
+
+  // Step 3: Show the function
+  { activeLines: ["L14","L15","L16"], activeGreen: ["L14","L15","L16"],
+    toolCall: { name: "read_file", input: '{ "path": "auth.ts" }' },
+    handler: "run_read", result: null,
+    info: "This is run_read — just reads the file and caps the output. Simple." },
+
+  // Step 4: Execute and return
+  { activeLines: ["L3"], activeGreen: ["L3"],
+    toolCall: { name: "read_file", input: '{ "path": "auth.ts" }' },
+    handler: "run_read",
+    result: "export function login(user) {\n  // bug: missing await\n  validate(user);\n}",
+    info: "handler() runs, execute() returns the result to the loop." },
+
+  // Step 5: Next tool call — edit_file
+  { activeLines: ["L1","L2"],
+    toolCall: { name: "edit_file", input: '{ "path": "auth.ts",\n  "old": "validate(user)",\n  "new": "await validate(user)" }' },
+    handler: null, result: null,
+    info: 'Loop calls execute() again. This time: "edit_file".' },
+
+  // Step 6: Dispatch edit
+  { activeLines: ["L2","L10"], activeGreen: ["L10"],
+    toolCall: { name: "edit_file", input: '{ "path": "auth.ts", ... }' },
+    handler: "run_edit", result: null,
+    info: 'TOOL_HANDLERS["edit_file"] → run_edit.' },
+
+  // Step 7: Execute and return
+  { activeLines: ["L3"], activeGreen: ["L3"],
+    toolCall: { name: "edit_file", input: '{ "path": "auth.ts", ... }' },
+    handler: "run_edit",
+    result: "Edited auth.ts\nvalidate(user) → await validate(user)",
+    info: "Bug fixed! Same execute(), same map. The tool changed — the code didn't." },
+];
+
+let step = -1;
+
+function clearLines() {
+  document.querySelectorAll('.code-line').forEach(el => {
+    el.classList.remove('active', 'active-green');
+  });
+}
+
+function renderStep(targetStep) {
+  step = targetStep;
+  clearLines();
+
+  if (step < 0) {
+    document.getElementById('toolCall').textContent = 'waiting for LLM...';
+    document.getElementById('toolCall').className = 'value empty';
+    document.getElementById('handler').textContent = '—';
+    document.getElementById('handler').className = 'value empty';
+    document.getElementById('arrow1').classList.remove('show');
+    document.getElementById('arrow2').classList.remove('show');
+    document.getElementById('resultBox').classList.remove('show');
+    document.getElementById('stepInfo').textContent = 'Click Next — the LLM will call tools';
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('prevBtn').disabled = true;
+    return;
+  }
+
+  const s = STEPS[step];
+
+  // Highlight code lines
+  (s.activeLines || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (s.activeGreen && s.activeGreen.includes(id)) {
+      el.classList.add('active-green');
+    } else {
+      el.classList.add('active');
+    }
+  });
+
+  // Tool call
+  if (s.toolCall) {
+    document.getElementById('toolCall').textContent = `${s.toolCall.name}(${s.toolCall.input})`;
+    document.getElementById('toolCall').className = 'value';
+  } else {
+    document.getElementById('toolCall').textContent = 'waiting for LLM...';
+    document.getElementById('toolCall').className = 'value empty';
+  }
+
+  // Handler
+  document.getElementById('arrow1').classList.toggle('show', !!s.handler);
+  if (s.handler) {
+    document.getElementById('handler').textContent = s.handler + '()';
+    document.getElementById('handler').className = 'value';
+  } else {
+    document.getElementById('handler').textContent = '—';
+    document.getElementById('handler').className = 'value empty';
+  }
+
+  // Result
+  document.getElementById('arrow2').classList.toggle('show', !!s.result);
+  if (s.result) {
+    document.getElementById('resultBox').classList.add('show');
+    document.getElementById('resultValue').textContent = s.result;
+  } else {
+    document.getElementById('resultBox').classList.remove('show');
+  }
+
+  // Info + buttons
+  document.getElementById('stepInfo').textContent = s.info;
+  document.getElementById('nextBtn').disabled = step >= STEPS.length - 1;
+  document.getElementById('prevBtn').disabled = step < 0;
+}
+
+function next() { if (step < STEPS.length - 1) renderStep(step + 1); }
+function prev() { renderStep(step - 1); }
+function reset() { renderStep(-1); }
+</script>
+</body>
+</html>
