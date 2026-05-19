@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Loop — visual</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; font-family: 'Menlo', 'Consolas', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 10px; }
+
+  /* === ROOT LAYOUT === */
+  .wrapper { display: flex; flex-direction: column; gap: 12px; align-items: center; max-width: 100%; }
+  .top-row { display: flex; gap: 16px; align-items: stretch; }
+
+  /* === PANEL TAG (small label at top of each panel) === */
+  .panel-tag { color: #484f58; font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-weight: 700; }
+  .panel-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6; }
+
+  /* === CODE PANEL (LEFT — for engineers) === */
+  .code-panel { width: 380px; background: #161b22; border: 2px solid #30363d; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; }
+  .code-title { color: #8b949e; font-size: 11px; margin-bottom: 8px; }
+  .code-line { padding: 1px 7px; border-radius: 4px; font-size: 11px; line-height: 1.55; color: #8b949e; transition: background 0.3s, color 0.3s, outline 0.3s; white-space: pre; }
+  .code-line.active { background: #1c2128; color: #e6edf3; outline: 1px solid #8b5cf6; outline-offset: -1px; }
+  .code-line .kw { color: #bc8cff; }
+  .code-line .fn { color: #79c0ff; }
+  .code-line .str { color: #7ee787; }
+  .code-line .cm { color: #484f58; }
+  .code-line .op { color: #ffa657; }
+  .iter-badge { display: inline-block; background: #8b5cf6; color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 8px; opacity: 0; transition: opacity 0.3s; align-self: flex-start; }
+  .iter-badge.show { opacity: 1; }
+
+  /* === ILLUSTRATION PANEL (RIGHT — for non-tech) === */
+  .visual-panel {
+    width: 340px;
+    background: linear-gradient(180deg, #161b22 0%, #11161d 100%);
+    border: 2px solid #30363d;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .visual-panel .panel-tag::before { background: #56d4dd; }
+
+  /* === SCENE STAGE (the unified canvas) === */
+  .scene-stage {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 230px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* === WHILE WRAPPER === */
+  .while-wrap {
+    position: absolute;
+    inset: 14px 2px 2px 2px;
+    border: 1.5px dashed transparent;
+    border-radius: 10px;
+    transition: border-color 0.45s ease;
+  }
+  .while-wrap.show { border-color: #ffa657; }
+  .while-label {
+    position: absolute;
+    top: -9px;
+    left: 12px;
+    background: #11161d;
+    padding: 0 8px;
+    font-size: 9px;
+    color: #ffa657;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.4s ease;
+  }
+  .while-label.show { opacity: 1; }
+  .while-label svg { width: 11px; height: 11px; }
+  .while-loop-spin { animation: spin 4s linear infinite; transform-origin: center; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* === ACTION ZONE (top) === */
+  .action-zone {
+    position: relative;
+    flex: 1;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 16px 6px;
+  }
+  .action-zone.append-mode {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .action-zone.append-mode .actor:not(.tall) svg { width: 44px; height: 44px; }
+  .action-zone.append-mode .actor.tall svg { width: 22px; height: 44px; }
+
+  /* === BOX ZONE (bottom — persistent history[]) === */
+  .box-zone {
+    margin-top: auto;
+    padding: 6px 14px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .history-box {
+    width: 240px;
+    min-height: 36px;
+    background: rgba(188, 140, 255, 0.05);
+    border: 1.5px solid #bc8cff;
+    border-radius: 8px;
+    padding: 5px 7px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+  }
+  .history-box.empty::before {
+    content: 'empty';
+    color: #484f58;
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  .box-label { font-size: 9px; color: #bc8cff; letter-spacing: 1px; text-transform: lowercase; font-family: 'Menlo', monospace; }
+
+  .letter-item {
+    width: 24px;
+    height: 18px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: letterDrop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  .letter-item svg { width: 100%; height: 100%; }
+  .letter-item.tint-purple { color: #bc8cff; }
+  .letter-item.tint-green { color: #7ee787; }
+  .letter-item.tint-red { color: #ff7b72; }
+  .letter-item.recent { filter: drop-shadow(0 0 4px currentColor); }
+  @keyframes letterDrop {
+    0% { transform: translateY(-32px) scale(0.6); opacity: 0; }
+    60% { transform: translateY(0) scale(1.15); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  /* === ACTOR (transient elements in action zone) === */
+  .actor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    animation: actorIn 0.42s ease forwards;
+  }
+  .actor:nth-child(1) { animation-delay: 0.05s; }
+  .actor:nth-child(2) { animation-delay: 0.15s; }
+  .actor:nth-child(3) { animation-delay: 0.25s; }
+  .actor:nth-child(4) { animation-delay: 0.35s; }
+  .actor:nth-child(5) { animation-delay: 0.45s; }
+  @keyframes actorIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.85); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .actor svg { width: 52px; height: 52px; }
+  .actor.tall svg { width: 28px; height: 64px; }
+  .actor .lbl { font-size: 9px; color: #8b949e; font-family: 'Menlo', monospace; letter-spacing: 0.3px; text-transform: lowercase; max-width: 72px; text-align: center; line-height: 1.15; }
+  .actor.tall .lbl { color: currentColor; font-weight: 700; }
+  .actor.pulse svg { animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 6px currentColor); }
+  }
+
+  /* Connector arrows between actors */
+  .arrow {
+    width: 22px; height: 16px;
+    opacity: 0;
+    animation: actorIn 0.42s ease forwards;
+  }
+  .arrow line { stroke: #484f58; stroke-width: 1.5; stroke-dasharray: 3 3; stroke-dashoffset: 18; animation: flow 1.6s linear infinite; }
+  .arrow polygon { fill: #484f58; }
+  @keyframes flow { to { stroke-dashoffset: 0; } }
+
+  /* === ICON SHARED === */
+  .ico { stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ico-fill { fill: currentColor; stroke: none; }
+
+  /* Color tints for actors */
+  .tint-purple { color: #bc8cff; }
+  .tint-green { color: #7ee787; }
+  .tint-blue { color: #79c0ff; }
+  .tint-orange { color: #ffa657; }
+  .tint-red { color: #ff7b72; }
+  .tint-cyan { color: #56d4dd; }
+  .tint-muted { color: #8b949e; }
+
+  /* === CONTROLS === */
+  .controls { display: flex; gap: 10px; justify-content: center; }
+  button { font-family: inherit; font-size: 13px; padding: 8px 20px; border-radius: 8px; border: 1px solid #30363d; cursor: pointer; transition: background 0.2s; }
+  .btn-next { background: #8b5cf6; color: #fff; border-color: #8b5cf6; }
+  .btn-next:hover { background: #7c3aed; }
+  .btn-next:disabled { opacity: 0.4; cursor: default; }
+  .btn-reset { background: #1c2128; color: #8b949e; }
+  .btn-reset:hover { background: #282e36; }
+  .btn-prev { background: #1c2128; color: #8b949e; border-color: #30363d; }
+  .btn-prev:hover { background: #282e36; }
+  .btn-prev:disabled { opacity: 0.4; cursor: default; }
+
+  @media (max-width: 780px) {
+    .top-row { flex-direction: column; align-items: center; }
+    .code-panel, .visual-panel { width: 95vw; max-width: 400px; }
+    .actor svg { width: 42px; height: 42px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ============ TOP ROW: CODE (LEFT) + ILLUSTRATION (RIGHT) ============ -->
+  <div class="top-row">
+    <!-- CODE PANEL — for engineers -->
+    <div class="code-panel">
+      <div class="panel-tag">code</div>
+      <div class="code-title">agent_loop.py</div>
+      <div class="code-line" id="L1"><span class="kw">def</span> <span class="fn">agent_loop</span>(query):</div>
+      <div class="code-line" id="L2">  conversation_history = [user_msg(query)]</div>
+      <div class="code-line" id="L3">  <span class="kw">while</span> <span class="op">True</span>:</div>
+      <div class="code-line" id="L4">    llm_answer = <span class="fn">llm</span>(conversation_history, tools)</div>
+      <div class="code-line" id="L5">    conversation_history.<span class="fn">append</span>(llm_answer)</div>
+      <div class="code-line" id="L6">    <span class="kw">if</span> llm_answer.stop != <span class="str">"tool_use"</span>:</div>
+      <div class="code-line" id="L7">      <span class="kw">break</span> <span class="cm"># done</span></div>
+      <div class="code-line" id="L8">    result = <span class="fn">execute</span>(llm_answer.tool)</div>
+      <div class="code-line" id="L9">    conversation_history.<span class="fn">append</span>(result)</div>
+      <div class="iter-badge" id="iterBadge">iteration #1</div>
+    </div>
+
+    <!-- ILLUSTRATION PANEL — for non-tech -->
+    <div class="visual-panel">
+      <div class="panel-tag">what's happening</div>
+      <div class="scene-stage">
+        <!-- WHILE WRAPPER (dashed border + label, appears at step 1+) -->
+        <div class="while-wrap" id="whileWrap"></div>
+        <div class="while-label" id="whileLabel">
+          <svg viewBox="0 0 16 16" class="while-loop-spin"><path class="ico" d="M13 8a5 5 0 1 1-1.5-3.5" stroke="currentColor" stroke-width="1.6"/><polygon points="10,3 14,3 12,7" fill="currentColor"/></svg>
+          while true
+        </div>
+
+        <!-- ACTION ZONE: dynamic actors per step -->
+        <div class="action-zone" id="actionZone"></div>
+
+        <!-- BOX ZONE: persistent history[] -->
+        <div class="box-zone">
+          <div class="history-box empty" id="historyBox"></div>
+          <div class="box-label">history[]</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CONTROLS ============ -->
+  <div class="controls">
+    <button class="btn-reset" onclick="reset()">Reset</button>
+    <button class="btn-prev" id="prevBtn" onclick="prev()" disabled>&larr; Prev</button>
+    <button class="btn-next" id="nextBtn" onclick="next()">Next &rarr;</button>
+  </div>
+</div>
+
+<!-- ============ SVG ICON LIBRARY ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- BRAIN: LLM -->
+    <symbol id="i-brain" viewBox="0 0 64 64">
+      <path class="ico" d="M24 14c-5 0-9 4-9 9 0 2 1 4 2 5-3 1-5 4-5 7s2 6 5 7c-1 2-2 4-2 6 0 4 3 7 7 7h4v-6M40 14c5 0 9 4 9 9 0 2-1 4-2 5 3 1 5 4 5 7s-2 6-5 7c1 2 2 4 2 6 0 4-3 7-7 7h-4v-6" stroke="currentColor" stroke-width="2.2"/>
+      <path class="ico" d="M32 12v40M24 24c2 1 4 2 8 2s6-1 8-2M24 38c2-1 4-2 8-2s6 1 8 2" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+
+    <!-- MAILBOX: LLM's answer arriving (envelope with flag) -->
+    <symbol id="i-mailbox" viewBox="0 0 64 64">
+      <path class="ico" d="M10 28c0-6 5-11 11-11h22c6 0 11 5 11 11v18a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4z" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.1"/>
+      <path class="ico" d="M10 28h22v22M21 17v33" stroke="currentColor" stroke-width="2"/>
+      <rect x="42" y="22" width="8" height="6" fill="currentColor"/>
+      <line class="ico" x1="46" y1="22" x2="46" y2="14" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+
+    <!-- ENVELOPE: closed letter -->
+    <symbol id="i-envelope" viewBox="0 0 64 48">
+      <rect class="ico" x="6" y="8" width="52" height="34" rx="3" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.08"/>
+      <path class="ico" d="M6 12 L32 28 L58 12" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+
+    <!-- ENVELOPE OPEN: paper sticking out of envelope with readable text lines -->
+    <symbol id="i-envelope-open" viewBox="0 0 64 60">
+      <!-- Envelope body (bottom rectangle) -->
+      <rect class="ico" x="6" y="32" width="52" height="22" rx="2" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.12"/>
+      <!-- Open flap (back V-shape, behind paper) -->
+      <path class="ico" d="M6 32 L32 46 L58 32" stroke="currentColor" stroke-width="1.4" fill="none" opacity="0.45"/>
+      <!-- Paper sticking up out of envelope -->
+      <rect class="ico" x="14" y="6" width="36" height="34" rx="1" stroke="currentColor" stroke-width="1.8" fill="#161b22"/>
+      <!-- Text lines on paper -->
+      <line class="ico" x1="18" y1="14" x2="46" y2="14" stroke="currentColor" stroke-width="1.5"/>
+      <line class="ico" x1="18" y1="21" x2="42" y2="21" stroke="currentColor" stroke-width="1.5"/>
+      <line class="ico" x1="18" y1="28" x2="44" y2="28" stroke="currentColor" stroke-width="1.5"/>
+      <line class="ico" x1="18" y1="35" x2="38" y2="35" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+
+    <!-- MAGNIFIER: inspecting -->
+    <symbol id="i-magnifier" viewBox="0 0 64 64">
+      <circle class="ico" cx="26" cy="26" r="14" stroke="currentColor" stroke-width="2.4" fill="currentColor" fill-opacity="0.06"/>
+      <line class="ico" x1="36" y1="36" x2="52" y2="52" stroke="currentColor" stroke-width="3.5"/>
+      <circle class="ico" cx="26" cy="26" r="6" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+    </symbol>
+
+    <!-- PERSON WITH HAMMER: execute() -->
+    <symbol id="i-hammer-person" viewBox="0 0 64 64">
+      <!-- Head -->
+      <circle class="ico" cx="24" cy="14" r="5" stroke="currentColor" stroke-width="2"/>
+      <!-- Body -->
+      <line class="ico" x1="24" y1="19" x2="24" y2="40" stroke="currentColor" stroke-width="2.2"/>
+      <!-- Left arm holding hammer -->
+      <path class="ico" d="M24 26 L36 22 L46 18" stroke="currentColor" stroke-width="2.2"/>
+      <!-- Hammer head -->
+      <rect x="42" y="10" width="14" height="8" rx="1" fill="currentColor"/>
+      <line class="ico" x1="46" y1="18" x2="40" y2="34" stroke="currentColor" stroke-width="2.5"/>
+      <!-- Right arm -->
+      <line class="ico" x1="24" y1="26" x2="14" y2="32" stroke="currentColor" stroke-width="2.2"/>
+      <!-- Legs -->
+      <line class="ico" x1="24" y1="40" x2="16" y2="56" stroke="currentColor" stroke-width="2.2"/>
+      <line class="ico" x1="24" y1="40" x2="32" y2="56" stroke="currentColor" stroke-width="2.2"/>
+    </symbol>
+
+    <!-- EXIT DOOR: break -->
+    <symbol id="i-exit" viewBox="0 0 64 64">
+      <rect class="ico" x="14" y="8" width="28" height="48" rx="2" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.08"/>
+      <circle class="ico-fill" cx="36" cy="32" r="2"/>
+      <path class="ico" d="M46 28 L58 28 M58 28 L52 22 M58 28 L52 34" stroke="currentColor" stroke-width="2.2"/>
+    </symbol>
+
+    <!-- TOOLS: the "tools" argument to llm() -->
+    <symbol id="i-tools" viewBox="0 0 64 64">
+      <path class="ico" d="M12 16 L20 8 L28 16 L20 24 L12 16 Z M30 30 L38 22 L46 30 L38 38 L30 30 Z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/>
+      <path class="ico" d="M44 42 L52 50 M48 38 L56 46 M40 46 L48 54" stroke="currentColor" stroke-width="2.2"/>
+    </symbol>
+
+    <!-- HISTORY MINI ICON: for action zone -->
+    <symbol id="i-history-mini" viewBox="0 0 64 64">
+      <rect class="ico" x="10" y="12" width="44" height="40" rx="3" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.08"/>
+      <rect x="16" y="22" width="32" height="3" rx="1" fill="currentColor" opacity="0.7"/>
+      <rect x="16" y="30" width="26" height="3" rx="1" fill="currentColor" opacity="0.5"/>
+      <rect x="16" y="38" width="30" height="3" rx="1" fill="currentColor" opacity="0.3"/>
+    </symbol>
+
+    <!-- LETTER MINI (small envelope for inside history box) -->
+    <symbol id="i-letter-mini" viewBox="0 0 24 18">
+      <rect class="ico" x="1.5" y="2" width="21" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.25"/>
+      <path class="ico" d="M1.5 4 L12 11 L22.5 4" stroke="currentColor" stroke-width="1.3"/>
+    </symbol>
+
+    <!-- CURSOR (initial idle) -->
+    <symbol id="i-cursor" viewBox="0 0 64 64">
+      <path class="ico" d="M22 18 L44 32 L34 34 L30 46 Z" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.2"/>
+    </symbol>
+
+    <!-- ARROW DOWN: visual indicator that something is being appended/dropping into the box -->
+    <symbol id="i-arrow-down" viewBox="0 0 32 64">
+      <line class="ico" x1="16" y1="6" x2="16" y2="50" stroke="currentColor" stroke-width="3" stroke-dasharray="4 3"/>
+      <polygon class="ico-fill" points="6,46 26,46 16,60"/>
+    </symbol>
+
+    <!-- NO-APPEND: down arrow with red X over it (skip the append) -->
+    <symbol id="i-no-append" viewBox="0 0 48 48">
+      <!-- Faded down arrow behind the X -->
+      <line class="ico" x1="24" y1="4" x2="24" y2="34" stroke="currentColor" stroke-width="3" stroke-dasharray="4 3" opacity="0.3"/>
+      <polygon points="14,30 34,30 24,44" fill="currentColor" opacity="0.3"/>
+      <!-- Prominent X overlay -->
+      <line class="ico" x1="6" y1="8" x2="42" y2="40" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+      <line class="ico" x1="42" y1="8" x2="6" y2="40" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+/* ================ STEP DEFINITIONS ================ */
+/* Each step has:
+   - lines: code lines to highlight
+   - iter: iteration number (0 = setup, 1-3 = loop iters)
+   - whileOn: whether the WHILE wrapper is shown
+   - actors: array describing the action-zone scene (actors + 'arrow' tokens)
+   - boxLetters: array of tint colors for letters currently in the history box
+*/
+const STEPS = [
+  // === SETUP ===
+  { lines: ["L2"], iter: 0, whileOn: false, actors: [], boxLetters: [] },
+  { lines: ["L3"], iter: 1, whileOn: true,  actors: [], boxLetters: [] },
+
+  // === ITERATION #1 (read_file) ===
+  { lines: ["L4"], iter: 1, whileOn: true, boxLetters: [],
+    actors: [
+      { icon: "i-history-mini", lbl: "history+tools", tint: "purple" },
+      "arrow",
+      { icon: "i-brain", lbl: "LLM", tint: "purple", pulse: true },
+      "arrow",
+      { icon: "i-mailbox", lbl: "answer", tint: "cyan", pulse: true }
+    ]
+  },
+  { lines: ["L5"], iter: 1, whileOn: true, boxLetters: ["purple"], recent: true,
+    actors: [
+      { icon: "i-mailbox", lbl: "answer", tint: "purple" },
+      { icon: "i-arrow-down", lbl: "append", tint: "purple", pulse: true, tall: true }
+    ]
+  },
+  { lines: ["L6"], iter: 1, whileOn: true, boxLetters: ["purple"], recent: true,
+    actors: [
+      { icon: "i-magnifier", lbl: "stop_reason?", tint: "orange", pulse: true },
+      { icon: "i-envelope-open", lbl: "tool_use", tint: "green" }
+    ]
+  },
+  { lines: ["L8"], iter: 1, whileOn: true, boxLetters: ["purple"],
+    actors: [
+      { icon: "i-envelope-open", lbl: "read_file", tint: "green" },
+      "arrow",
+      { icon: "i-hammer-person", lbl: "execute", tint: "orange", pulse: true }
+    ]
+  },
+  { lines: ["L9"], iter: 1, whileOn: true, boxLetters: ["purple", "green"], recent: true,
+    actors: [
+      { icon: "i-envelope", lbl: "result", tint: "green" },
+      { icon: "i-arrow-down", lbl: "append", tint: "green", pulse: true, tall: true }
+    ]
+  },
+
+  // === ITERATION #2 (edit_file) ===
+  { lines: ["L4"], iter: 2, whileOn: true, boxLetters: ["purple", "green"],
+    actors: [
+      { icon: "i-history-mini", lbl: "history+tools", tint: "purple" },
+      "arrow",
+      { icon: "i-brain", lbl: "LLM", tint: "purple", pulse: true },
+      "arrow",
+      { icon: "i-mailbox", lbl: "answer", tint: "cyan", pulse: true }
+    ]
+  },
+  { lines: ["L5"], iter: 2, whileOn: true, boxLetters: ["purple", "green", "purple"], recent: true,
+    actors: [
+      { icon: "i-mailbox", lbl: "answer", tint: "purple" },
+      { icon: "i-arrow-down", lbl: "append", tint: "purple", pulse: true, tall: true }
+    ]
+  },
+  { lines: ["L6"], iter: 2, whileOn: true, boxLetters: ["purple", "green", "purple"], recent: true,
+    actors: [
+      { icon: "i-magnifier", lbl: "stop_reason?", tint: "orange", pulse: true },
+      { icon: "i-envelope-open", lbl: "tool_use", tint: "green" }
+    ]
+  },
+  { lines: ["L8"], iter: 2, whileOn: true, boxLetters: ["purple", "green", "purple"],
+    actors: [
+      { icon: "i-envelope-open", lbl: "edit_file", tint: "green" },
+      "arrow",
+      { icon: "i-hammer-person", lbl: "execute", tint: "orange", pulse: true }
+    ]
+  },
+  { lines: ["L9"], iter: 2, whileOn: true, boxLetters: ["purple", "green", "purple", "green"], recent: true,
+    actors: [
+      { icon: "i-envelope", lbl: "result", tint: "green" },
+      { icon: "i-arrow-down", lbl: "append", tint: "green", pulse: true, tall: true }
+    ]
+  },
+
+  // === ITERATION #3 (end_turn → break) ===
+  { lines: ["L4"], iter: 3, whileOn: true, boxLetters: ["purple", "green", "purple", "green"],
+    actors: [
+      { icon: "i-history-mini", lbl: "history+tools", tint: "purple" },
+      "arrow",
+      { icon: "i-brain", lbl: "LLM", tint: "purple", pulse: true },
+      "arrow",
+      { icon: "i-mailbox", lbl: "answer", tint: "cyan", pulse: true }
+    ]
+  },
+  { lines: ["L5","L6","L7"], iter: 3, whileOn: false, boxLetters: ["purple", "green", "purple", "green"],
+    actors: [
+      { icon: "i-envelope-open", lbl: "answer = end_turn", tint: "red", pulse: true },
+      { icon: "i-no-append", lbl: "skip append", tint: "red", pulse: true },
+      "arrow",
+      { icon: "i-exit", lbl: "break", tint: "red", pulse: true }
+    ]
+  }
+];
+
+let step = -1;
+
+function clearActiveLines() {
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+}
+
+function renderActors(actors) {
+  const zone = document.getElementById('actionZone');
+  zone.innerHTML = '';
+  const isAppendMode = actors && actors.some(a => a && a.tall);
+  zone.classList.toggle('append-mode', isAppendMode);
+  if (!actors || actors.length === 0) {
+    return;
+  }
+  actors.forEach(item => {
+    if (item === 'arrow') {
+      const a = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      a.setAttribute('viewBox', '0 0 22 16');
+      a.setAttribute('class', 'arrow');
+      a.innerHTML = `<line x1="2" y1="8" x2="16" y2="8"/><polygon points="16,4 22,8 16,12"/>`;
+      zone.appendChild(a);
+    } else {
+      const actor = document.createElement('div');
+      actor.className = `actor tint-${item.tint}` + (item.pulse ? ' pulse' : '') + (item.tall ? ' tall' : '');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', item.tall ? '0 0 32 64' : '0 0 64 64');
+      const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+      use.setAttribute('href', `#${item.icon}`);
+      svg.appendChild(use);
+      actor.appendChild(svg);
+      if (item.lbl) {
+        const lbl = document.createElement('span');
+        lbl.className = 'lbl';
+        lbl.textContent = item.lbl;
+        actor.appendChild(lbl);
+      }
+      zone.appendChild(actor);
+    }
+  });
+}
+
+function renderBox(letters, recentIdx) {
+  const box = document.getElementById('historyBox');
+  box.innerHTML = '';
+  if (!letters || letters.length === 0) {
+    box.classList.add('empty');
+    return;
+  }
+  box.classList.remove('empty');
+  letters.forEach((tint, i) => {
+    const item = document.createElement('div');
+    const isRecent = (recentIdx === i);
+    item.className = `letter-item tint-${tint}` + (isRecent ? ' recent' : '');
+    if (!isRecent) item.style.animation = 'none';
+    item.style.opacity = '1';
+    item.innerHTML = `<svg viewBox="0 0 24 18"><use href="#i-letter-mini"/></svg>`;
+    box.appendChild(item);
+  });
+}
+
+function renderStep(target) {
+  step = target;
+
+  if (step < 0) {
+    document.getElementById('iterBadge').classList.remove('show');
+    document.getElementById('whileWrap').classList.remove('show');
+    document.getElementById('whileLabel').classList.remove('show');
+    clearActiveLines();
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('historyBox').innerHTML = '';
+    document.getElementById('historyBox').classList.add('empty');
+    document.getElementById('actionZone').innerHTML = `
+      <div class="actor tint-muted">
+        <svg viewBox="0 0 64 64"><use href="#i-cursor"/></svg>
+        <span class="lbl">click next</span>
+      </div>`;
+    return;
+  }
+
+  const s = STEPS[step];
+
+  // Highlight code lines
+  clearActiveLines();
+  s.lines.forEach(id => document.getElementById(id)?.classList.add('active'));
+
+  // Iteration badge
+  const badge = document.getElementById('iterBadge');
+  if (s.iter > 0) {
+    badge.textContent = `iteration #${s.iter}`;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+
+  // WHILE wrapper visibility
+  document.getElementById('whileWrap').classList.toggle('show', s.whileOn);
+  document.getElementById('whileLabel').classList.toggle('show', s.whileOn);
+
+  // Box state
+  const recentIdx = s.recent ? s.boxLetters.length - 1 : -1;
+  renderBox(s.boxLetters, recentIdx);
+
+  // Action zone
+  renderActors(s.actors);
+
+  // Buttons
+  const isDone = step === STEPS.length - 1;
+  document.getElementById('nextBtn').disabled = isDone;
+  document.getElementById('prevBtn').disabled = step < 0;
+}
+
+function next() { if (step < STEPS.length - 1) renderStep(step + 1); }
+function prev() { if (step >= 0) renderStep(step - 1); }
+function reset() { renderStep(-1); }
+
+renderStep(-1);
+</script>
+</body>
+</html>
