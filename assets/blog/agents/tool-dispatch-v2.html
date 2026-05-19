@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tool Dispatch — visual</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; font-family: 'Menlo', 'Consolas', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 10px; }
+
+  /* === ROOT LAYOUT === */
+  .wrapper { display: flex; flex-direction: column; gap: 12px; align-items: center; max-width: 100%; }
+  .top-row { display: flex; gap: 16px; align-items: stretch; }
+
+  /* === PANEL TAG === */
+  .panel-tag { color: #484f58; font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-weight: 700; }
+  .panel-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6; }
+
+  /* === CODE PANEL (LEFT) === */
+  .code-panel { width: 380px; background: #161b22; border: 2px solid #30363d; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; }
+  .code-title { color: #8b949e; font-size: 11px; margin-bottom: 8px; }
+  .code-line { padding: 1px 7px; border-radius: 4px; font-size: 11px; line-height: 1.55; color: #8b949e; transition: background 0.3s, color 0.3s, outline 0.3s; white-space: pre; }
+  .code-line.active { background: #1c2128; color: #e6edf3; outline: 1px solid #8b5cf6; outline-offset: -1px; }
+  .code-line.active-green { background: #0d2818; color: #7ee787; outline: 1px solid #22c55e; outline-offset: -1px; }
+  .code-line .kw { color: #bc8cff; }
+  .code-line .fn { color: #79c0ff; }
+  .code-line .str { color: #7ee787; }
+  .code-line .cm { color: #484f58; }
+  .code-line .op { color: #ffa657; }
+  .code-line .var { color: #ff7b72; }
+
+  /* === ILLUSTRATION PANEL (RIGHT) === */
+  .visual-panel {
+    width: 340px;
+    background: linear-gradient(180deg, #161b22 0%, #11161d 100%);
+    border: 2px solid #30363d;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .visual-panel .panel-tag::before { background: #56d4dd; }
+
+  /* === SCENE STAGE === */
+  .scene-stage {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 230px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* === ACTION ZONE === */
+  .action-zone {
+    position: relative;
+    flex: 1;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 16px 6px;
+  }
+  .action-zone.dispatch-mode {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .action-zone.dispatch-mode .actor:not(.tall) svg { width: 44px; height: 44px; }
+  .action-zone.dispatch-mode .actor.tall svg { width: 22px; height: 44px; }
+
+  /* === SHELF ZONE (persistent TOOL_HANDLERS bookshelf) === */
+  .rack-zone {
+    margin-top: auto;
+    padding: 6px 10px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .bookshelf {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    align-items: flex-end;
+    width: 100%;
+    padding: 0 6px;
+  }
+  .book {
+    flex: 1;
+    height: 62px;
+    border-radius: 2px 4px 4px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 6px 2px 4px;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: linear-gradient(135deg, var(--book-c) 0%, var(--book-cd) 100%);
+    border: 1px solid rgba(0,0,0,0.35);
+    box-shadow: inset -2px 0 0 rgba(0,0,0,0.18), inset 2px 0 0 rgba(255,255,255,0.08);
+    position: relative;
+    min-width: 0;
+  }
+  .book::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 50%;
+    width: 1px;
+    background: rgba(255,255,255,0.15);
+  }
+  .book[data-name="bash"]       { --book-c: #4a8bd1; --book-cd: #2c5d99; }
+  .book[data-name="read_file"]  { --book-c: #5fa86b; --book-cd: #3d7344; }
+  .book[data-name="write_file"] { --book-c: #c97a3d; --book-cd: #8b5022; }
+  .book[data-name="edit_file"]  { --book-c: #b665d4; --book-cd: #7d3aa3; }
+  .book svg { width: 22px; height: 22px; color: rgba(255,255,255,0.95); }
+  .book .name { font-size: 8px; color: rgba(255,255,255,0.95); font-weight: 700; letter-spacing: 0.1px; text-align: center; line-height: 1.05; margin-top: 4px; font-family: 'Menlo', monospace; }
+  .book.active, .book.active-orange {
+    transform: translateY(-16px) rotate(-3deg);
+    z-index: 5;
+  }
+  .book.active { box-shadow: 0 8px 20px rgba(126, 231, 135, 0.55), inset -2px 0 0 rgba(0,0,0,0.18), 0 0 0 2px #7ee787; }
+  .book.active-orange { box-shadow: 0 8px 20px rgba(255, 166, 87, 0.55), inset -2px 0 0 rgba(0,0,0,0.18), 0 0 0 2px #ffa657; }
+
+  .shelf-board {
+    width: 100%;
+    height: 7px;
+    background: linear-gradient(180deg, #6b4226 0%, #3d2613 80%, #221308 100%);
+    border-radius: 1px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+    margin-top: -1px;
+  }
+  .rack-label { font-size: 9px; color: #8b949e; letter-spacing: 1.2px; font-family: 'Menlo', monospace; margin-top: 6px; }
+  .rack-label .dict-bracket { color: #56d4dd; }
+
+  /* === ACTOR === */
+  .actor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    animation: actorIn 0.42s ease forwards;
+  }
+  .actor:nth-child(1) { animation-delay: 0.05s; }
+  .actor:nth-child(2) { animation-delay: 0.15s; }
+  .actor:nth-child(3) { animation-delay: 0.25s; }
+  .actor:nth-child(4) { animation-delay: 0.35s; }
+  .actor:nth-child(5) { animation-delay: 0.45s; }
+  @keyframes actorIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.85); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .actor svg { width: 52px; height: 52px; }
+  .actor.tall svg { width: 28px; height: 64px; }
+  .actor .lbl { font-size: 9px; color: #8b949e; font-family: 'Menlo', monospace; letter-spacing: 0.3px; text-transform: lowercase; max-width: 80px; text-align: center; line-height: 1.15; }
+  .actor.pulse svg { animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 6px currentColor); }
+  }
+
+  .arrow {
+    width: 22px; height: 16px;
+    opacity: 0;
+    animation: actorIn 0.42s ease forwards;
+  }
+  .arrow line { stroke: #484f58; stroke-width: 1.5; stroke-dasharray: 3 3; stroke-dashoffset: 18; animation: flow 1.6s linear infinite; }
+  .arrow polygon { fill: #484f58; }
+  @keyframes flow { to { stroke-dashoffset: 0; } }
+
+  /* === ICON SHARED === */
+  .ico { stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ico-fill { fill: currentColor; stroke: none; }
+
+  /* === COLOR TINTS === */
+  .tint-purple { color: #bc8cff; }
+  .tint-green { color: #7ee787; }
+  .tint-blue { color: #79c0ff; }
+  .tint-orange { color: #ffa657; }
+  .tint-red { color: #ff7b72; }
+  .tint-cyan { color: #56d4dd; }
+  .tint-muted { color: #8b949e; }
+
+  /* === CONTROLS === */
+  .controls { display: flex; gap: 10px; justify-content: center; }
+  button { font-family: inherit; font-size: 13px; padding: 8px 20px; border-radius: 8px; border: 1px solid #30363d; cursor: pointer; transition: background 0.2s; }
+  .btn-next { background: #8b5cf6; color: #fff; border-color: #8b5cf6; }
+  .btn-next:hover { background: #7c3aed; }
+  .btn-next:disabled { opacity: 0.4; cursor: default; }
+  .btn-reset { background: #1c2128; color: #8b949e; }
+  .btn-reset:hover { background: #282e36; }
+  .btn-prev { background: #1c2128; color: #8b949e; border-color: #30363d; }
+  .btn-prev:hover { background: #282e36; }
+  .btn-prev:disabled { opacity: 0.4; cursor: default; }
+
+  @media (max-width: 780px) {
+    .top-row { flex-direction: column; align-items: center; }
+    .code-panel, .visual-panel { width: 95vw; max-width: 400px; }
+    .actor svg { width: 42px; height: 42px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ============ TOP ROW: CODE (LEFT) + ILLUSTRATION (RIGHT) ============ -->
+  <div class="top-row">
+    <!-- CODE PANEL -->
+    <div class="code-panel">
+      <div class="panel-tag">code</div>
+      <div class="code-title">execute.py</div>
+      <div class="code-line" id="L1"><span class="kw">def</span> <span class="fn">execute</span>(tool_call):</div>
+      <div class="code-line" id="L2">  handler = TOOL_HANDLERS[tool_call.name]</div>
+      <div class="code-line" id="L3">  <span class="kw">return</span> <span class="fn">handler</span>(**tool_call.input)</div>
+      <div class="code-line" id="L4">&nbsp;</div>
+      <div class="code-line" id="L5"><span class="cm"># The dispatch map</span></div>
+      <div class="code-line" id="L6"><span class="var">TOOL_HANDLERS</span> = {</div>
+      <div class="code-line" id="L7">  <span class="str">"bash"</span>:       <span class="fn">run_bash</span>,</div>
+      <div class="code-line" id="L8">  <span class="str">"read_file"</span>:  <span class="fn">run_read</span>,</div>
+      <div class="code-line" id="L9">  <span class="str">"write_file"</span>: <span class="fn">run_write</span>,</div>
+      <div class="code-line" id="L10">  <span class="str">"edit_file"</span>:  <span class="fn">run_edit</span>,</div>
+      <div class="code-line" id="L11">}</div>
+    </div>
+
+    <!-- ILLUSTRATION PANEL -->
+    <div class="visual-panel">
+      <div class="panel-tag">what's happening</div>
+      <div class="scene-stage">
+
+        <!-- ACTION ZONE: dynamic actors per step -->
+        <div class="action-zone" id="actionZone"></div>
+
+        <!-- RACK ZONE: persistent TOOL_HANDLERS -->
+        <div class="rack-zone">
+          <div class="bookshelf" id="bookshelf">
+            <div class="book" data-name="bash">
+              <svg viewBox="0 0 22 22"><use href="#i-terminal"/></svg>
+              <div class="name">bash</div>
+            </div>
+            <div class="book" data-name="read_file">
+              <svg viewBox="0 0 22 22"><use href="#i-doc-read"/></svg>
+              <div class="name">read_file</div>
+            </div>
+            <div class="book" data-name="write_file">
+              <svg viewBox="0 0 22 22"><use href="#i-doc-write"/></svg>
+              <div class="name">write_file</div>
+            </div>
+            <div class="book" data-name="edit_file">
+              <svg viewBox="0 0 22 22"><use href="#i-doc-edit"/></svg>
+              <div class="name">edit_file</div>
+            </div>
+          </div>
+          <div class="shelf-board"></div>
+          <div class="rack-label">TOOL_HANDLERS <span class="dict-bracket">{ }</span></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CONTROLS ============ -->
+  <div class="controls">
+    <button class="btn-reset" onclick="reset()">Reset</button>
+    <button class="btn-prev" id="prevBtn" onclick="prev()" disabled>&larr; Prev</button>
+    <button class="btn-next" id="nextBtn" onclick="next()">Next &rarr;</button>
+  </div>
+</div>
+
+<!-- ============ SVG ICON LIBRARY ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- ENVELOPE: incoming tool_call -->
+    <symbol id="i-envelope" viewBox="0 0 64 48">
+      <rect class="ico" x="6" y="8" width="52" height="34" rx="3" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.08"/>
+      <path class="ico" d="M6 12 L32 28 L58 12" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+
+    <!-- ENVELOPE TAGGED: envelope with name tag visible on top -->
+    <symbol id="i-envelope-tagged" viewBox="0 0 64 56">
+      <rect class="ico" x="6" y="18" width="52" height="34" rx="3" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.08"/>
+      <path class="ico" d="M6 22 L32 38 L58 22" stroke="currentColor" stroke-width="2"/>
+      <rect class="ico" x="14" y="4" width="36" height="14" rx="2" stroke="currentColor" stroke-width="1.8" fill="#161b22"/>
+      <line class="ico" x1="20" y1="11" x2="44" y2="11" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+
+    <!-- MAGNIFIER: dispatch/lookup -->
+    <symbol id="i-magnifier" viewBox="0 0 64 64">
+      <circle class="ico" cx="26" cy="26" r="14" stroke="currentColor" stroke-width="2.4" fill="currentColor" fill-opacity="0.06"/>
+      <line class="ico" x1="36" y1="36" x2="52" y2="52" stroke="currentColor" stroke-width="3.5"/>
+      <circle class="ico" cx="26" cy="26" r="6" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+    </symbol>
+
+    <!-- ARROW DOWN: routing to a slot -->
+    <symbol id="i-arrow-down" viewBox="0 0 32 64">
+      <line class="ico" x1="16" y1="6" x2="16" y2="50" stroke="currentColor" stroke-width="3" stroke-dasharray="4 3"/>
+      <polygon class="ico-fill" points="6,46 26,46 16,60"/>
+    </symbol>
+
+    <!-- ARROW UP: result returning back to caller (history) -->
+    <symbol id="i-arrow-up" viewBox="0 0 32 64">
+      <polygon class="ico-fill" points="6,18 26,18 16,4"/>
+      <line class="ico" x1="16" y1="14" x2="16" y2="58" stroke="currentColor" stroke-width="3" stroke-dasharray="4 3"/>
+    </symbol>
+
+    <!-- RESULT ENVELOPE: returned content -->
+    <symbol id="i-envelope-content" viewBox="0 0 64 48">
+      <rect class="ico" x="6" y="8" width="52" height="34" rx="3" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.12"/>
+      <line class="ico" x1="14" y1="20" x2="50" y2="20" stroke="currentColor" stroke-width="1.6"/>
+      <line class="ico" x1="14" y1="27" x2="44" y2="27" stroke="currentColor" stroke-width="1.6"/>
+      <line class="ico" x1="14" y1="34" x2="48" y2="34" stroke="currentColor" stroke-width="1.6"/>
+    </symbol>
+
+    <!-- TERMINAL: bash handler -->
+    <symbol id="i-terminal" viewBox="0 0 22 22">
+      <rect class="ico" x="2" y="3" width="18" height="16" rx="1.5" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.1"/>
+      <path class="ico" d="M5 9 L8 11 L5 13 M10 14 L14 14" stroke="currentColor" stroke-width="1.6"/>
+    </symbol>
+
+    <!-- DOC + EYE: read_file handler -->
+    <symbol id="i-doc-read" viewBox="0 0 22 22">
+      <path class="ico" d="M5 2 L14 2 L18 6 L18 20 L5 20 Z" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.1"/>
+      <path class="ico" d="M14 2 L14 6 L18 6" stroke="currentColor" stroke-width="1.4"/>
+      <ellipse class="ico" cx="11.5" cy="14" rx="4" ry="2.4" stroke="currentColor" stroke-width="1.4"/>
+      <circle class="ico-fill" cx="11.5" cy="14" r="1.2"/>
+    </symbol>
+
+    <!-- DOC + PEN: write_file handler -->
+    <symbol id="i-doc-write" viewBox="0 0 22 22">
+      <path class="ico" d="M4 3 L13 3 L17 7 L17 19 L4 19 Z" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.1"/>
+      <path class="ico" d="M13 3 L13 7 L17 7" stroke="currentColor" stroke-width="1.4"/>
+      <line class="ico" x1="6.5" y1="11" x2="13" y2="11" stroke="currentColor" stroke-width="1.4"/>
+      <line class="ico" x1="6.5" y1="14" x2="11" y2="14" stroke="currentColor" stroke-width="1.4"/>
+      <path class="ico" d="M14 13 L19 18 L17 20 L12 15 Z" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity="0.3"/>
+    </symbol>
+
+    <!-- DOC + EDIT: edit_file handler -->
+    <symbol id="i-doc-edit" viewBox="0 0 22 22">
+      <path class="ico" d="M3 3 L12 3 L16 7 L16 19 L3 19 Z" stroke="currentColor" stroke-width="1.6" fill="currentColor" fill-opacity="0.1"/>
+      <path class="ico" d="M12 3 L12 7 L16 7" stroke="currentColor" stroke-width="1.4"/>
+      <line class="ico" x1="5.5" y1="11" x2="13" y2="11" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 1.5"/>
+      <line class="ico" x1="5.5" y1="14" x2="10" y2="14" stroke="currentColor" stroke-width="1.4"/>
+      <path class="ico" d="M14 14 L20 14 M17 11 L17 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- BRAIN (LLM caller, optional) -->
+    <symbol id="i-brain" viewBox="0 0 64 64">
+      <path class="ico" d="M24 14c-5 0-9 4-9 9 0 2 1 4 2 5-3 1-5 4-5 7s2 6 5 7c-1 2-2 4-2 6 0 4 3 7 7 7h4v-6M40 14c5 0 9 4 9 9 0 2-1 4-2 5 3 1 5 4 5 7s-2 6-5 7c1 2 2 4 2 6 0 4-3 7-7 7h-4v-6" stroke="currentColor" stroke-width="2.2"/>
+      <path class="ico" d="M32 12v40M24 24c2 1 4 2 8 2s6-1 8-2M24 38c2-1 4-2 8-2s6 1 8 2" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+
+    <!-- HISTORY MINI: box of stacked letters representing conversation_history -->
+    <symbol id="i-history-mini" viewBox="0 0 64 64">
+      <rect class="ico" x="10" y="12" width="44" height="40" rx="3" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.08"/>
+      <rect x="16" y="22" width="32" height="3" rx="1" fill="currentColor" opacity="0.7"/>
+      <rect x="16" y="30" width="26" height="3" rx="1" fill="currentColor" opacity="0.5"/>
+      <rect x="16" y="38" width="30" height="3" rx="1" fill="currentColor" opacity="0.3"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+const STEPS = [
+  { lines: ["L5","L6","L7","L8","L9","L10","L11"], activeSlot: null, actors: [] },
+
+  { lines: ["L1"], activeSlot: null,
+    actors: [
+      { icon: "i-envelope-tagged", lbl: "read_file(auth.ts)", tint: "purple", pulse: true }
+    ]
+  },
+
+  { lines: ["L2"], activeSlot: "read_file", slotTint: "green",
+    actors: [
+      { icon: "i-magnifier", lbl: "lookup", tint: "orange", pulse: true },
+      { icon: "i-arrow-down", lbl: "dispatch", tint: "green", pulse: true, tall: true }
+    ]
+  },
+
+  { lines: ["L3"], activeSlot: "read_file", slotTint: "green",
+    actors: [
+      { icon: "i-envelope-content", lbl: "result", tint: "green", pulse: true }
+    ]
+  },
+
+  { lines: ["L3"], activeSlot: null,
+    actors: [
+      { icon: "i-envelope-content", lbl: "result", tint: "green" },
+      "arrow",
+      { icon: "i-history-mini", lbl: "history[]", tint: "purple", pulse: true }
+    ]
+  }
+];
+
+let step = -1;
+
+function clearLines() {
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active', 'active-green'));
+}
+
+function clearSlots() {
+  document.querySelectorAll('.book').forEach(el => el.classList.remove('active', 'active-orange'));
+}
+
+function renderActors(actors) {
+  const zone = document.getElementById('actionZone');
+  zone.innerHTML = '';
+  const isDispatchMode = actors && actors.some(a => a && a.tall);
+  zone.classList.toggle('dispatch-mode', isDispatchMode);
+  if (!actors || actors.length === 0) return;
+
+  actors.forEach(item => {
+    if (item === "arrow") {
+      const a = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      a.setAttribute('viewBox', '0 0 22 16');
+      a.setAttribute('class', 'arrow');
+      a.innerHTML = '<line x1="2" y1="8" x2="16" y2="8"/><polygon points="14,4 20,8 14,12"/>';
+      zone.appendChild(a);
+    } else {
+      const actor = document.createElement('div');
+      actor.className = 'actor tint-' + item.tint;
+      if (item.pulse) actor.classList.add('pulse');
+      if (item.tall) actor.classList.add('tall');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+      use.setAttribute('href', '#' + item.icon);
+      svg.appendChild(use);
+      actor.appendChild(svg);
+      const lbl = document.createElement('div');
+      lbl.className = 'lbl';
+      lbl.textContent = item.lbl;
+      actor.appendChild(lbl);
+      zone.appendChild(actor);
+    }
+  });
+}
+
+function renderStep(targetStep) {
+  step = targetStep;
+  clearLines();
+  clearSlots();
+
+  if (step < 0) {
+    renderActors([]);
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('prevBtn').disabled = true;
+    return;
+  }
+
+  const s = STEPS[step];
+
+  (s.lines || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  });
+
+  if (s.activeSlot) {
+    const book = document.querySelector(`.book[data-name="${s.activeSlot}"]`);
+    if (book) {
+      book.classList.add(s.slotTint === 'orange' ? 'active-orange' : 'active');
+    }
+  }
+
+  renderActors(s.actors);
+
+  document.getElementById('nextBtn').disabled = step >= STEPS.length - 1;
+  document.getElementById('prevBtn').disabled = step < 0;
+}
+
+function next() { if (step < STEPS.length - 1) renderStep(step + 1); }
+function prev() { renderStep(step - 1); }
+function reset() { renderStep(-1); }
+
+renderStep(-1);
+</script>
+</body>
+</html>
