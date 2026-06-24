@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Marketing I Don't Do Anymore — Emmanuel Orozco</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Libre+Franklin:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* === CSS CUSTOM PROPERTIES === */
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2128;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --accent-purple: #bc8cff;
+            --accent-green: #7ee787;
+            --accent-blue: #79c0ff;
+            --accent-orange: #ffa657;
+            --accent-red: #ff7b72;
+            --accent-cyan: #56d4dd;
+            --border: #30363d;
+
+            --font-display: 'Libre Franklin', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --title-size: clamp(2rem, 6vw, 4.5rem);
+            --h2-size: clamp(1.5rem, 4vw, 3rem);
+            --h3-size: clamp(1.1rem, 2.5vw, 1.75rem);
+            --body-size: clamp(0.8rem, 1.5vw, 1.15rem);
+            --code-size: clamp(0.7rem, 1.2vw, 0.95rem);
+            --small-size: clamp(0.65rem, 1vw, 0.85rem);
+            --slide-padding: clamp(1.5rem, 5vw, 5rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+            --element-gap: clamp(0.25rem, 1vw, 1rem);
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* === VIEWPORT BASE (MANDATORY) === */
+        html, body { height: 100%; overflow-x: hidden; }
+        html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+        .slide {
+            width: 100vw; height: 100vh; height: 100dvh;
+            overflow: hidden; scroll-snap-align: start;
+            display: flex; flex-direction: column; position: relative;
+        }
+        .slide-content {
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
+            max-height: 100%; overflow: hidden; padding: var(--slide-padding);
+        }
+        img, .image-container { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+        @media (max-height: 700px) {
+            :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --content-gap: clamp(0.4rem, 1.5vw, 1rem); --title-size: clamp(1.25rem, 4.5vw, 2.5rem); --h2-size: clamp(1rem, 3vw, 1.75rem); }
+        }
+        @media (max-height: 600px) {
+            :root { --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem); --title-size: clamp(1.1rem, 4vw, 2rem); --body-size: clamp(0.7rem, 1.2vw, 0.95rem); }
+            .nav-dots, .keyboard-hint, .decorative { display: none; }
+        }
+        @media (max-height: 500px) {
+            :root { --slide-padding: clamp(0.4rem, 2vw, 1rem); --title-size: clamp(1rem, 3.5vw, 1.5rem); }
+        }
+        @media (max-width: 600px) { :root { --title-size: clamp(1.25rem, 7vw, 2.5rem); } }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+            html { scroll-behavior: auto; }
+        }
+
+        /* === BASE STYLES === */
+        body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-display); }
+
+        .slide { background: var(--bg-primary); }
+
+        /* === ANIMATIONS === */
+        .reveal { opacity: 0; transform: translateY(25px); transition: opacity var(--duration-normal) var(--ease-out-expo), transform var(--duration-normal) var(--ease-out-expo); }
+        .slide.visible .reveal { opacity: 1; transform: translateY(0); }
+        .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .reveal:nth-child(2) { transition-delay: 0.15s; }
+        .reveal:nth-child(3) { transition-delay: 0.25s; }
+        .reveal:nth-child(4) { transition-delay: 0.35s; }
+        .reveal:nth-child(5) { transition-delay: 0.45s; }
+
+        /* === TITLE SLIDE === */
+        .title-slide { justify-content: center; align-items: center; text-align: center; }
+        .title-slide h1 { font-size: var(--title-size); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: var(--element-gap); }
+        .title-slide .subtitle { font-size: var(--body-size); color: var(--text-secondary); font-weight: 300; }
+        .title-slide .author { font-size: var(--small-size); color: var(--text-muted); margin-top: var(--content-gap); font-family: var(--font-mono); }
+
+        /* === SECTION SLIDES === */
+        .section-slide { justify-content: center; align-items: center; text-align: center; }
+        .section-number { font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-purple); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: var(--element-gap); }
+        .slide h2 { font-size: var(--h2-size); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: var(--content-gap); }
+        .slide h3 { font-size: var(--h3-size); font-weight: 600; margin-bottom: var(--element-gap); }
+        .slide p { font-size: var(--body-size); color: var(--text-secondary); line-height: 1.6; max-width: 720px; }
+
+        /* === CODE BLOCKS === */
+        .code-block {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;
+            padding: clamp(0.75rem, 2vw, 1.5rem); font-family: var(--font-mono);
+            font-size: var(--code-size); line-height: 1.65; overflow: hidden;
+            max-width: min(90vw, 700px); width: 100%;
+        }
+        .code-block .kw { color: var(--accent-purple); }
+        .code-block .fn { color: var(--accent-blue); }
+        .code-block .str { color: var(--accent-green); }
+        .code-block .cm { color: var(--text-muted); }
+        .code-block .op { color: var(--accent-orange); }
+        .code-block .var { color: var(--accent-red); }
+
+        /* === HIGHLIGHT BOX === */
+        .highlight-box {
+            background: var(--bg-card); border-left: 3px solid var(--accent-purple);
+            padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.75rem, 2vw, 1.5rem);
+            border-radius: 0 6px 6px 0; margin: var(--element-gap) 0;
+            font-size: var(--body-size); max-width: 700px;
+        }
+        .highlight-box strong { color: var(--accent-orange); }
+
+
+        /* === LAYOUT HELPERS === */
+        .split { display: flex; gap: var(--content-gap); align-items: center; flex: 1; }
+        .split > * { flex: 1; }
+        @media (max-width: 768px) { .split { flex-direction: column; } }
+        .center { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .center .code-block, .center .code-collapsible, .center .code-stack { text-align: left; }
+        .gap { gap: var(--content-gap); }
+        .gap-sm { gap: var(--element-gap); }
+        .mt { margin-top: var(--content-gap); }
+
+        /* === TOOL CARDS === */
+        .tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--element-gap); max-width: 500px; }
+        .tool-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+            padding: clamp(0.4rem, 1vw, 0.75rem) clamp(0.6rem, 1.5vw, 1rem);
+            font-family: var(--font-mono); font-size: var(--code-size); color: var(--accent-green);
+        }
+
+        /* === CHANNEL PILLS === */
+        .channel-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .channel {
+            padding: 4px 14px; border-radius: 20px; font-size: var(--small-size); font-weight: 600;
+        }
+        .channel.wa { background: #25d366; color: #000; }
+        .channel.tg { background: #0088cc; color: #fff; }
+        .channel.sl { background: #4a154b; color: #fff; }
+        .channel.dc { background: #5865f2; color: #fff; }
+        .channel.more { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
+
+        /* === PROGRESS BAR === */
+        .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent-purple); z-index: 1000; transition: width 0.3s; width: 0; }
+
+        /* === NAV DOTS === */
+        .nav-dots { position: fixed; right: clamp(8px, 1.5vw, 20px); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+        .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); cursor: pointer; transition: background 0.3s, transform 0.3s; border: none; padding: 0; }
+        .nav-dot.active { background: var(--accent-purple); transform: scale(1.4); }
+
+        /* === EDIT MODE === */
+        .edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+        .edit-toggle {
+            position: fixed; top: 12px; left: 12px; background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-size: 14px;
+            cursor: pointer; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+        [contenteditable="true"] { outline: 2px dashed var(--accent-purple); outline-offset: 4px; border-radius: 4px; }
+
+        /* === ACCENT LINE === */
+        .slide::before {
+            content: ''; position: absolute; left: 0; top: 0; width: 3px; height: 100%;
+            background: linear-gradient(to bottom, var(--accent-purple), transparent);
+            opacity: 0.3;
+        }
+
+        /* === GREEN EMPHASIS === */
+        .em-green { color: var(--accent-green); }
+
+        /* === COLLAPSIBLE PREVIOUS CODE === */
+        .code-collapsible { margin-bottom: 8px; max-width: min(90vw, 700px); width: 100%; }
+        .code-collapsible summary {
+            font-family: var(--font-mono); font-size: var(--small-size); color: var(--text-muted);
+            cursor: pointer; padding: 6px 12px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 6px 6px 0 0; list-style: none; display: flex; align-items: center; gap: 6px;
+        }
+        .code-collapsible summary::before { content: '▶'; font-size: 10px; transition: transform 0.2s; }
+        .code-collapsible[open] summary::before { transform: rotate(90deg); }
+        .code-collapsible[open] summary { border-radius: 6px 6px 0 0; border-bottom: none; }
+        .code-collapsible .code-block { border-radius: 0 0 8px 8px; border-top: 1px dashed var(--border); opacity: 0.7; margin: 0; }
+        .code-collapsible + .code-block { border-radius: 0 0 8px 8px; }
+        .code-new { border-top: none; border-radius: 0 0 8px 8px; }
+        .code-stack { max-width: min(90vw, 700px); width: 100%; }
+        .code-stack .code-block:first-child { border-radius: 8px 8px 0 0; }
+        .code-stack .code-block:last-child { border-radius: 0 0 8px 8px; }
+
+        /* === INTERACTIVE EMBED === */
+        .embed-frame { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; width: min(95vw, 800px); height: min(70vh, 520px); }
+        .embed-frame iframe { width: 100%; height: 100%; border: none; }
+    </style></head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <nav class="nav-dots" id="navDots"></nav>
+    <div class="edit-hotzone"></div>
+    <button class="edit-toggle" id="editToggle" title="Edit mode (E)">Edit</button>
+
+    <!-- === SLIDE 1: TITLE === -->
+    <section class="slide title-slide">
+        <div class="slide-content center">
+            <h1 class="reveal">The Marketing I Don't<br>Do Anymore</h1>
+            <p class="subtitle reveal">because it's automated 😏</p>
+            <p class="author reveal">by - Emmanuel Orozco 🎸</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 2: THE PROBLEM === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <p class="section-number reveal">01 / The Problem</p>
+            <h2 class="reveal">Running a social club = <span class="em-green">lots of repetitive tasks</span>.</h2>
+            <p class="reveal" style="color: var(--accent-orange); font-size: var(--h3-size); font-weight: 600;">I hate copy pasting.</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 3: SO I AUTOMATED IT === -->
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="reveal" style="color: var(--accent-green); font-size: var(--title-size); font-weight: 800;">So I automated it.</p>
+        </div>
+    </section>
+
+    <!-- === SLIDE 4: WHAT I AUTOMATE === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">02 / The Solution</p>
+            <h2 class="reveal">What I <span class="em-green">automate</span>.</h2>
+            <div class="reveal" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; max-width: 700px; width: 100%; margin-top: var(--content-gap);">
+                <div style="border: 2px solid var(--accent-orange); border-radius: 10px; padding: 16px; font-family: var(--font-mono); text-align: center; background: rgba(255, 166, 87, 0.05);">
+                    <span style="font-size: 1.4rem;">📣</span><br>
+                    <span style="color: var(--accent-orange); font-weight: 700; font-size: var(--code-size);">Facebook<br>Outreach</span>
+                </div>
+                <div style="border: 2px solid var(--accent-purple); border-radius: 10px; padding: 16px; font-family: var(--font-mono); text-align: center; background: rgba(188, 140, 255, 0.05);">
+                    <span style="font-size: 1.4rem;">📊</span><br>
+                    <span style="color: var(--accent-purple); font-weight: 700; font-size: var(--code-size);">Metrics &<br>Analytics</span>
+                </div>
+                <div style="border: 2px solid var(--accent-green); border-radius: 10px; padding: 16px; font-family: var(--font-mono); text-align: center; background: rgba(126, 231, 135, 0.05);">
+                    <span style="font-size: 1.4rem;">🏪</span><br>
+                    <span style="color: var(--accent-green); font-weight: 700; font-size: var(--code-size);">Venue<br>Outreach</span>
+                </div>
+                <div style="border: 2px solid var(--accent-cyan); border-radius: 10px; padding: 16px; font-family: var(--font-mono); text-align: center; background: rgba(118, 227, 234, 0.05);">
+                    <span style="font-size: 1.4rem;">👥</span><br>
+                    <span style="color: var(--accent-cyan); font-weight: 700; font-size: var(--code-size);">CRM<br>Management</span>
+                </div>
+                <div style="border: 2px solid var(--accent-blue); border-radius: 10px; padding: 16px; font-family: var(--font-mono); text-align: center; background: rgba(88, 166, 255, 0.05);">
+                    <span style="font-size: 1.4rem;">✍️</span><br>
+                    <span style="color: var(--accent-blue); font-weight: 700; font-size: var(--code-size);">Copy<br>Drafting</span>
+                </div>
+                <div style="border: 2px solid var(--accent-red); border-radius: 10px; padding: 16px; font-family: var(--font-mono); text-align: center; background: rgba(255, 123, 114, 0.05);">
+                    <span style="font-size: 1.4rem;">🎨</span><br>
+                    <span style="color: var(--accent-red); font-weight: 700; font-size: var(--code-size);">Materials<br>Creation</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === BEFORE WE DIVE IN === -->
+    <section class="slide section-slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">Before we dive in —<br><span class="em-green">the tech behind it</span>.</h2>
+            <p class="reveal" style="color: var(--text-secondary); font-size: var(--body-size); max-width: 500px; text-align: center;">The tech behind it.</p>
+        </div>
+    </section>
+
+    <!-- === CAMOFOX EXPLAINER === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal"><img src="gifs/camofox-logo.png" alt="Camofox" style="height: 1.2em; vertical-align: middle; margin-right: 8px;">What is <span style="color: var(--accent-green)">Camofox</span>?</h2>
+            <p class="reveal" style="color: var(--text-primary); font-size: var(--h3-size); font-weight: 600; max-width: 700px; text-align: center;">
+                API browsing for agents<br>with anti-detection.
+            </p>
+            <div class="code-block reveal" style="max-width: 600px;">
+<span class="cm">// open a page</span><br>
+<span class="kw">POST</span> <span class="str">localhost:9377/tabs</span><br>
+{ <span class="str">"url"</span>: <span class="str">"https://instagram.com/some_venue"</span> }<br>
+<br>
+<span class="cm">// get page content</span><br>
+<span class="kw">GET</span> <span class="str">localhost:9377/tabs/{id}/snapshot</span><br>
+→ { <span class="str">"snapshot"</span>: <span class="str">"heading 'Some Venue' ... 1,234 followers ..."</span> }
+            </div>
+            <div class="highlight-box reveal" style="max-width: 600px;">
+                Facebook and Instagram <strong>block bots aggressively</strong>.<br>
+                Camofox looks like a real browser — your agents browse without getting banned.
+            </div>
+        </div>
+    </section>
+
+    <!-- === SECTION - CLAUDE CODE === -->
+    <section class="slide section-slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">03 / Hermes Agent</p>
+            <h2 class="reveal">What I use <span style="color: var(--accent-purple)">Hermes Agent</span> for.</h2>
+        </div>
+    </section>
+
+    <!-- === CLAUDE — USE CASES === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">Use cases.</h2>
+            <div class="reveal" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; max-width: 750px; width: 100%; margin-top: var(--content-gap);">
+                <div style="border: 2px solid var(--accent-purple); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(188, 140, 255, 0.05);">
+                    <span style="color: var(--accent-purple); font-weight: 700; font-size: var(--body-size);">✍️ Drafting Copy</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        event descriptions<br>IG captions, WhatsApp msgs
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-orange); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(255, 166, 87, 0.05);">
+                    <span style="color: var(--accent-orange); font-weight: 700; font-size: var(--body-size);">🎨 Materials</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        presentations, bingo cards<br>quiz questions
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-blue); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(88, 166, 255, 0.05);">
+                    <span style="color: var(--accent-blue); font-weight: 700; font-size: var(--body-size);">💡 Brainstorming</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        future event ideas<br>activity formats
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-green); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(126, 231, 135, 0.05);">
+                    <span style="color: var(--accent-green); font-weight: 700; font-size: var(--body-size);">🏪 Venue Outreach</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        find venues, get their IG<br>contact automatically
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-cyan); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(118, 227, 234, 0.05);">
+                    <span style="color: var(--accent-cyan); font-weight: 700; font-size: var(--body-size);">👥 CRM</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        attendee management<br>queries about attendees
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === CLAUDE — HOW IT WORKS (TOOLS DIAGRAM) === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">How it <span style="color: var(--accent-purple)">works</span>.</h2>
+            <div class="reveal" style="display: flex; flex-direction: column; gap: 20px; align-items: center; max-width: 750px; width: 100%; margin-top: var(--content-gap);">
+                <!-- Input tools -->
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-cyan);">📄 Google Docs</div>
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-cyan);">📧 Email</div>
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-cyan);">👁️ Computer Vision</div>
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-cyan);">📁 File System</div>
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-cyan);">🗺️ Google Maps API</div>
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-cyan);">💻 CLI / Terminal</div>
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-cyan);">📅 Luma</div>
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-cyan);">🤝 Meetup</div>
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-cyan);">📸 IG Scraping</div>
+                </div>
+                <div style="color: var(--text-muted); font-size: 1.2rem;">↓</div>
+                <!-- Claude (center, big) -->
+                <div style="border: 2px solid var(--accent-purple); border-radius: 14px; padding: 24px 48px; font-family: var(--font-mono); text-align: center; background: rgba(188, 140, 255, 0.05);">
+                    <span style="color: var(--accent-purple); font-weight: 700; font-size: var(--h3-size);">Hermes Agent</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size);">orchestrates everything</span>
+                </div>
+                <div style="color: var(--text-muted); font-size: 1.2rem;">↓</div>
+                <!-- Output tools -->
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-green);">🦊 Camofox</div>
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-green);">✈️ Telegram</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === NOW THE DEEP DIVES === -->
+
+    <!-- === SECTION - VENUE OUTREACH === -->
+    <section class="slide section-slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">04 / Venue Outreach</p>
+            <h2 class="reveal">Finding the next venue.<br><span class="em-green">On autopilot.</span></h2>
+        </div>
+    </section>
+
+    <!-- === VENUE OUTREACH — HOW IT WORKS (DIAGRAM) === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">How <span class="em-green">venue outreach</span> works.</h2>
+            <div class="reveal" style="display: flex; flex-direction: column; gap: 18px; align-items: center; max-width: 700px; width: 100%; margin-top: var(--content-gap);">
+                <div style="border: 2px solid var(--accent-cyan); border-radius: 10px; padding: 14px 32px; font-family: var(--font-mono); text-align: center;">
+                    <span style="color: var(--accent-cyan); font-weight: 700; font-size: var(--body-size);">✈️ I message on Telegram</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size);">"find me 20 bars near Châtelet with Instagram"</span>
+                </div>
+                <div style="color: var(--text-muted); font-size: 1.4rem;">↓</div>
+                <div style="border: 2px solid var(--accent-purple); border-radius: 12px; padding: 18px 28px; font-family: var(--font-mono); text-align: center; max-width: 500px; width: 100%; background: rgba(188, 140, 255, 0.05);">
+                    <span style="color: var(--accent-purple); font-weight: 700; font-size: var(--body-size);">🧠 Hermes Agent</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        searches Google Maps API<br>
+                        filters by criteria<br>
+                        gets venue websites
+                    </span>
+                </div>
+                <div style="color: var(--text-muted); font-size: 1.4rem;">↓</div>
+                <div style="border: 2px solid var(--accent-green); border-radius: 12px; padding: 18px 28px; font-family: var(--font-mono); text-align: center; max-width: 500px; width: 100%; background: rgba(126, 231, 135, 0.05);">
+                    <span style="color: var(--accent-green); font-weight: 700; font-size: var(--body-size);">🦊 Camofox + my cookies</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        scrapes venue websites → extracts IG handle<br>
+                        opens Instagram → sends outreach message
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SECTION - FB OUTREACH === -->
+    <section class="slide section-slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">05 / Facebook Outreach</p>
+            <h2 class="reveal">Handling <span style="color: var(--accent-orange)">30+ groups</span>.</h2>
+        </div>
+    </section>
+
+    <!-- === FB AGENT — HOW IT WORKS (DIAGRAM) === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">How the <span class="em-green">FB Agent</span> works.</h2>
+            <div class="reveal" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 650px; width: 100%; margin-top: var(--content-gap);">
+                <div style="border: 2px solid var(--accent-blue); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(88, 166, 255, 0.05);">
+                    <span style="color: var(--accent-blue); font-weight: 700; font-size: var(--body-size);">👂 Social Listening</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        scans every group<br>parses every post<br>rejects spam/noise<br>LLM classifies relevance<br><span style="color: var(--accent-green); font-weight: 600;">alerts me + link</span>
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-orange); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(255, 166, 87, 0.05);">
+                    <span style="color: var(--accent-orange); font-weight: 700; font-size: var(--body-size);">📤 Autopost</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        posts every X days<br>picks template<br>fills variables<br>publishes automatically
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-purple); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(188, 140, 255, 0.05);">
+                    <span style="color: var(--accent-purple); font-weight: 700; font-size: var(--body-size);">📝 Templates</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        multiple tones<br>variables per group<br>event, date, link, venue
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-green); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(126, 231, 135, 0.05);">
+                    <span style="color: var(--accent-green); font-weight: 700; font-size: var(--body-size);">📊 Post Analytics</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        tracks reactions<br>comments per post<br>per group performance
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === FB AGENT FEATURES === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">What it does.</h2>
+            <div class="reveal" style="max-width: 720px; width: 100%; margin-top: var(--element-gap);">
+                <!-- Laptop frame -->
+                <div style="background: #1c1c1e; border-radius: 12px 12px 0 0; padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f57;"></span>
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #febc2e;"></span>
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #28c840;"></span>
+                    <span style="flex: 1; text-align: center; font-family: var(--font-mono); font-size: var(--small-size); color: var(--text-muted);">localhost:8080</span>
+                </div>
+                <div style="background: #0d1117; border: 1px solid var(--border); border-top: none; border-radius: 0 0 12px 12px; padding: 4px; overflow: hidden;">
+                    <img src="gifs/fb-agent-demo.gif" alt="FB Agent demo" style="width: 100%; border-radius: 0 0 8px 8px; display: block;" id="fb-agent-demo">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === SECTION - METRICS === -->
+    <section class="slide section-slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">06 / Metrics & Analytics</p>
+            <h2 class="reveal">Tracking <span class="em-green">everything</span>.</h2>
+        </div>
+    </section>
+
+    <!-- === METRICS DIAGRAM === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">What we <span class="em-green">track</span>.</h2>
+            <div class="reveal" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 650px; width: 100%; margin-top: var(--content-gap);">
+                <div style="border: 2px solid var(--accent-purple); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(188, 140, 255, 0.05);">
+                    <span style="color: var(--accent-purple); font-weight: 700; font-size: var(--body-size);">📸 Instagram</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        followers count<br>views, reach, interactions<br>link taps (7d window)
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-blue); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(88, 166, 255, 0.05);">
+                    <span style="color: var(--accent-blue); font-weight: 700; font-size: var(--body-size);">📅 Luma & Meetup</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        followers / subscribers<br>attendees per event<br>RSVP tracking
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-orange); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(255, 166, 87, 0.05);">
+                    <span style="color: var(--accent-orange); font-weight: 700; font-size: var(--body-size);">📊 Per-Post Analytics</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        views & likes per post<br>comments, saves, shares<br>Reel vs Carousel vs Post
+                    </span>
+                </div>
+                <div style="border: 2px solid var(--accent-green); border-radius: 12px; padding: 20px 24px; font-family: var(--font-mono); text-align: center; background: rgba(126, 231, 135, 0.05);">
+                    <span style="color: var(--accent-green); font-weight: 700; font-size: var(--body-size);">📈 Community Growth</span><br>
+                    <span style="color: var(--text-primary); font-size: var(--small-size); line-height: 1.8;">
+                        daily growth by channel<br>30-day trends<br>what content drives signups
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === DASHBOARD SCREENSHOT === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <h2 class="reveal">The <span class="em-green">dashboard</span>.</h2>
+            <div class="reveal" style="max-width: 720px; width: 100%; margin-top: var(--element-gap);">
+                <!-- Laptop frame -->
+                <div style="background: #1c1c1e; border-radius: 12px 12px 0 0; padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f57;"></span>
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #febc2e;"></span>
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #28c840;"></span>
+                    <span style="flex: 1; text-align: center; font-family: var(--font-mono); font-size: var(--small-size); color: var(--text-muted);">localhost:3000/admin/dashboard</span>
+                </div>
+                <div style="background: #0d1117; border: 1px solid var(--border); border-top: none; border-radius: 0 0 12px 12px; padding: 4px; overflow: hidden;">
+                    <img src="gifs/dashboard-demo.gif" alt="Dashboard demo" style="width: 100%; border-radius: 0 0 8px 8px; display: block;" id="dashboard-demo">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === LEARNINGS === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <p class="section-number reveal">07 / Learnings</p>
+            <h2 class="reveal">What I <span class="em-green">learned</span>.</h2>
+            <div class="highlight-box reveal">
+                <strong style="color: var(--accent-orange);">LinkedIn cannot be automated directly</strong> — use external APIs.
+            </div>
+            <div class="highlight-box reveal">
+                <strong style="color: var(--accent-orange);">Claude + Camofox is too slow for content creation.</strong><br>
+                It re-discovers the UI every time — which button to click, where to type. 2 minutes + 2,000 tokens per post.<br>
+                <span style="color: var(--accent-green);">Solution: build dedicated scripts.</span> Hard-coded clicks, no LLM needed. 5 seconds, zero tokens.
+            </div>
+        </div>
+    </section>
+
+    <!-- === WHAT'S NEXT === -->
+    <section class="slide">
+        <div class="slide-content gap-sm">
+            <p class="section-number reveal">08 / What's Next</p>
+            <h2 class="reveal">What's <span class="em-green">next</span>.</h2>
+            <div class="highlight-box reveal">
+                <strong>Re-engagement via Beeper MCP</strong> — "Haven't seen you in X days, hope to see you soon!" Automated WhatsApp pings for inactive members + post-event feedback collection.
+            </div>
+            <div class="highlight-box reveal">
+                <strong>Shared company brain</strong> — FB agent + Hermes Agent share context, coordinate across tools.
+            </div>
+        </div>
+    </section>
+
+    <!-- === THANKS === -->
+    <section class="slide title-slide">
+        <div class="slide-content center">
+            <h1 class="reveal">Thanks!</h1>
+            <div class="reveal" style="margin-top: var(--content-gap);">
+                <img src="gifs/qr-linkedin.png" alt="LinkedIn QR" style="width: 160px; height: 160px; border-radius: 8px; background: white; padding: 8px;">
+            </div>
+            <p class="reveal" style="color: var(--text-secondary); font-family: var(--font-mono); font-size: var(--small-size); margin-top: var(--element-gap);">LinkedIn</p>
+            <p class="subtitle reveal">emmanuelorozco.com</p>
+        </div>
+    </section>
+
+    <script>
+        /* === SLIDE PRESENTATION CONTROLLER === */
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.currentSlide = 0;
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupProgressBar();
+                this.setupNavDots();
+            }
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const idx = Array.from(this.slides).indexOf(entry.target);
+                            this.currentSlide = idx;
+                            this.updateProgress();
+                            this.updateDots();
+                        }
+                    });
+                }, { threshold: 0.5 });
+                this.slides.forEach(s => observer.observe(s));
+            }
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.target.getAttribute('contenteditable')) return;
+                    if (['ArrowDown','ArrowRight','Space','PageDown'].includes(e.code)) { e.preventDefault(); this.next(); }
+                    if (['ArrowUp','ArrowLeft','PageUp'].includes(e.code)) { e.preventDefault(); this.prev(); }
+                });
+            }
+            setupTouchNav() {
+                let startY = 0;
+                document.addEventListener('touchstart', e => startY = e.touches[0].clientY, { passive: true });
+                document.addEventListener('touchend', e => {
+                    const diff = startY - e.changedTouches[0].clientY;
+                    if (Math.abs(diff) > 50) diff > 0 ? this.next() : this.prev();
+                }, { passive: true });
+            }
+            setupProgressBar() { this.progressBar = document.getElementById('progressBar'); }
+            setupNavDots() {
+                const nav = document.getElementById('navDots');
+                this.dots = [];
+                this.slides.forEach((_, i) => {
+                    const dot = document.createElement('button');
+                    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+                    dot.addEventListener('click', () => this.goTo(i));
+                    nav.appendChild(dot);
+                    this.dots.push(dot);
+                });
+            }
+            next() { if (this.currentSlide < this.slides.length - 1) this.goTo(this.currentSlide + 1); }
+            prev() { if (this.currentSlide > 0) this.goTo(this.currentSlide - 1); }
+            goTo(i) { this.slides[i].scrollIntoView({ behavior: 'smooth' }); }
+            updateProgress() { this.progressBar.style.width = ((this.currentSlide + 1) / this.slides.length * 100) + '%'; }
+            updateDots() { this.dots.forEach((d, i) => d.classList.toggle('active', i === this.currentSlide)); }
+        }
+        new SlidePresentation();
+
+        /* === INLINE EDITOR === */
+        const editor = {
+            isActive: false,
+            toggleEditMode() {
+                this.isActive = !this.isActive;
+                document.getElementById('editToggle').classList.toggle('active', this.isActive);
+                document.querySelectorAll('h1,h2,h3,p:not(.section-number)').forEach(el => {
+                    el.contentEditable = this.isActive;
+                });
+                if (!this.isActive) {
+                    localStorage.setItem('slides-marketing-automation', document.body.innerHTML);
+                }
+            }
+        };
+        const saved = localStorage.getItem('slides-marketing-automation');
+        if (saved) document.body.innerHTML = saved;
+
+        document.getElementById('editToggle').addEventListener('click', () => editor.toggleEditMode());
+        const hotzone = document.querySelector('.edit-hotzone');
+        const editToggle = document.getElementById('editToggle');
+        let hideTimeout = null;
+        hotzone.addEventListener('mouseenter', () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); });
+        hotzone.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+        editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+        editToggle.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+        hotzone.addEventListener('click', () => editor.toggleEditMode());
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) editor.toggleEditMode();
+        });
+        /* === LASER POINTER (toggle with L key) === */
+        let laserOn = false;
+        const laser = document.createElement('div');
+        laser.style.cssText = 'position:fixed;width:12px;height:12px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px 4px rgba(239,68,68,0.5),0 0 20px 8px rgba(239,68,68,0.2);pointer-events:none;z-index:99999;display:none;transform:translate(-50%,-50%);transition:opacity 0.15s;';
+        document.body.appendChild(laser);
+        document.addEventListener('mousemove', (e) => {
+            if (laserOn) { laser.style.left = e.clientX + 'px'; laser.style.top = e.clientY + 'px'; }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'l' || e.key === 'L') {
+                if (e.target.getAttribute('contenteditable')) return;
+                laserOn = !laserOn;
+                laser.style.display = laserOn ? 'block' : 'none';
+                document.body.style.cursor = laserOn ? 'none' : '';
+            }
+        });
+    </script>
+</body>
+</html>
