@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loop Engineering — Buzzword or worth learning?</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Libre+Franklin:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* === CSS CUSTOM PROPERTIES === */
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2128;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --accent-purple: #bc8cff;
+            --accent-green: #7ee787;
+            --accent-blue: #79c0ff;
+            --accent-orange: #ffa657;
+            --accent-red: #ff7b72;
+            --accent-cyan: #56d4dd;
+            --border: #30363d;
+
+            --font-display: 'Libre Franklin', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --title-size: clamp(2rem, 6vw, 4.5rem);
+            --h2-size: clamp(1.5rem, 4vw, 3rem);
+            --h3-size: clamp(1.1rem, 2.5vw, 1.75rem);
+            --body-size: clamp(0.8rem, 1.5vw, 1.15rem);
+            --code-size: clamp(0.7rem, 1.2vw, 0.95rem);
+            --small-size: clamp(0.65rem, 1vw, 0.85rem);
+            --slide-padding: clamp(1.5rem, 5vw, 5rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+            --element-gap: clamp(0.25rem, 1vw, 1rem);
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* === VIEWPORT BASE (MANDATORY) === */
+        html, body { height: 100%; overflow-x: hidden; }
+        html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+        .slide {
+            width: 100vw; height: 100vh; height: 100dvh;
+            overflow: hidden; scroll-snap-align: start;
+            display: flex; flex-direction: column; position: relative;
+        }
+        .slide-content {
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
+            max-height: 100%; overflow: hidden; padding: var(--slide-padding);
+        }
+        img, .image-container { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+        @media (max-height: 700px) {
+            :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --content-gap: clamp(0.4rem, 1.5vw, 1rem); --title-size: clamp(1.25rem, 4.5vw, 2.5rem); --h2-size: clamp(1rem, 3vw, 1.75rem); }
+        }
+        @media (max-height: 600px) {
+            :root { --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem); --title-size: clamp(1.1rem, 4vw, 2rem); --body-size: clamp(0.7rem, 1.2vw, 0.95rem); }
+            .nav-dots, .keyboard-hint, .decorative { display: none; }
+        }
+        @media (max-height: 500px) {
+            :root { --slide-padding: clamp(0.4rem, 2vw, 1rem); --title-size: clamp(1rem, 3.5vw, 1.5rem); }
+        }
+        @media (max-width: 600px) { :root { --title-size: clamp(1.25rem, 7vw, 2.5rem); } }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+            html { scroll-behavior: auto; }
+        }
+
+        /* === BASE STYLES === */
+        body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-display); }
+
+        .slide { background: var(--bg-primary); }
+
+        /* === ANIMATIONS === */
+        .reveal { opacity: 0; transform: translateY(25px); transition: opacity var(--duration-normal) var(--ease-out-expo), transform var(--duration-normal) var(--ease-out-expo); }
+        .slide.visible .reveal { opacity: 1; transform: translateY(0); }
+        .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .reveal:nth-child(2) { transition-delay: 0.15s; }
+        .reveal:nth-child(3) { transition-delay: 0.25s; }
+        .reveal:nth-child(4) { transition-delay: 0.35s; }
+        .reveal:nth-child(5) { transition-delay: 0.45s; }
+
+        /* === TITLE SLIDE === */
+        .title-slide { justify-content: center; align-items: center; text-align: center; }
+        .title-slide h1 { font-size: var(--title-size); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: var(--element-gap); }
+        .title-slide .subtitle { font-size: var(--body-size); color: var(--text-secondary); font-weight: 300; }
+        .title-slide .author { font-size: var(--body-size); color: var(--text-secondary); margin-top: var(--content-gap); font-family: var(--font-mono); }
+
+        /* === SECTION SLIDES === */
+        .section-slide { justify-content: center; align-items: center; text-align: center; }
+        .section-number { font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-purple); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: var(--element-gap); }
+        .slide h2 { font-size: var(--h2-size); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: var(--content-gap); }
+        .slide h3 { font-size: var(--h3-size); font-weight: 600; margin-bottom: var(--element-gap); }
+        .slide p { font-size: var(--body-size); color: var(--text-secondary); line-height: 1.6; max-width: 720px; }
+
+        /* === CODE BLOCKS === */
+        .code-block {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;
+            padding: clamp(0.75rem, 2vw, 1.5rem); font-family: var(--font-mono);
+            font-size: var(--code-size); line-height: 1.65; overflow: hidden;
+            max-width: min(90vw, 700px); width: 100%;
+        }
+        .code-block .kw { color: var(--accent-purple); }
+        .code-block .fn { color: var(--accent-blue); }
+        .code-block .str { color: var(--accent-green); }
+        .code-block .cm { color: var(--text-muted); }
+        .code-block .op { color: var(--accent-orange); }
+        .code-block .var { color: var(--accent-red); }
+
+        /* === HIGHLIGHT BOX === */
+        .highlight-box {
+            background: var(--bg-card); border-left: 3px solid var(--accent-purple);
+            padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.75rem, 2vw, 1.5rem);
+            border-radius: 0 6px 6px 0; margin: var(--element-gap) 0;
+            font-size: var(--body-size); max-width: 700px;
+        }
+        .highlight-box strong { color: var(--accent-orange); }
+
+
+        /* === LAYOUT HELPERS === */
+        .split { display: flex; gap: var(--content-gap); align-items: center; flex: 1; }
+        .split > * { flex: 1; }
+        @media (max-width: 768px) { .split { flex-direction: column; } }
+        .center { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .center .code-block, .center .code-collapsible, .center .code-stack { text-align: left; }
+        .gap { gap: var(--content-gap); }
+        .gap-sm { gap: var(--element-gap); }
+        .mt { margin-top: var(--content-gap); }
+
+        /* === TOOL CARDS === */
+        .tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--element-gap); max-width: 500px; }
+        .tool-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+            padding: clamp(0.4rem, 1vw, 0.75rem) clamp(0.6rem, 1.5vw, 1rem);
+            font-family: var(--font-mono); font-size: var(--code-size); color: var(--accent-green);
+        }
+
+        /* === CHANNEL PILLS === */
+        .channel-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .channel {
+            padding: 4px 14px; border-radius: 20px; font-size: var(--small-size); font-weight: 600;
+        }
+        .channel.wa { background: #25d366; color: #000; }
+        .channel.tg { background: #0088cc; color: #fff; }
+        .channel.sl { background: #4a154b; color: #fff; }
+        .channel.dc { background: #5865f2; color: #fff; }
+        .channel.more { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
+
+        /* === PROGRESS BAR === */
+        .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent-purple); z-index: 1000; transition: width 0.3s; width: 0; }
+
+        /* === NAV DOTS === */
+        .nav-dots { position: fixed; right: clamp(8px, 1.5vw, 20px); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+        .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); cursor: pointer; transition: background 0.3s, transform 0.3s; border: none; padding: 0; }
+        .nav-dot.active { background: var(--accent-purple); transform: scale(1.4); }
+
+        /* === EDIT MODE === */
+        .edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+        .edit-toggle {
+            position: fixed; top: 12px; left: 12px; background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-size: 14px;
+            cursor: pointer; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+        [contenteditable="true"] { outline: 2px dashed var(--accent-purple); outline-offset: 4px; border-radius: 4px; }
+
+        /* === ACCENT LINE === */
+        .slide::before {
+            content: ''; position: absolute; left: 0; top: 0; width: 3px; height: 100%;
+            background: linear-gradient(to bottom, var(--accent-purple), transparent);
+            opacity: 0.3;
+        }
+
+        /* === GREEN EMPHASIS === */
+        .em-green { color: var(--accent-green); }
+
+        /* === COLLAPSIBLE PREVIOUS CODE === */
+        .code-collapsible { margin-bottom: 8px; max-width: min(90vw, 700px); width: 100%; }
+        .code-collapsible summary {
+            font-family: var(--font-mono); font-size: var(--small-size); color: var(--text-muted);
+            cursor: pointer; padding: 6px 12px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 6px 6px 0 0; list-style: none; display: flex; align-items: center; gap: 6px;
+        }
+        .code-collapsible summary::before { content: '▶'; font-size: 10px; transition: transform 0.2s; }
+        .code-collapsible[open] summary::before { transform: rotate(90deg); }
+        .code-collapsible[open] summary { border-radius: 6px 6px 0 0; border-bottom: none; }
+        .code-collapsible .code-block { border-radius: 0 0 8px 8px; border-top: 1px dashed var(--border); opacity: 0.7; margin: 0; }
+        .code-collapsible + .code-block { border-radius: 0 0 8px 8px; }
+        .code-new { border-top: none; border-radius: 0 0 8px 8px; }
+        .code-stack { max-width: min(90vw, 700px); width: 100%; }
+        .code-stack .code-block:first-child { border-radius: 8px 8px 0 0; }
+        .code-stack .code-block:last-child { border-radius: 0 0 8px 8px; }
+
+        /* === INTERACTIVE EMBED === */
+        .embed-frame { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; width: min(95vw, 800px); height: min(70vh, 520px); }
+        .embed-frame iframe { width: 100%; height: 100%; border: none; }
+    </style>
+<style>
+        /* === LOOP DECK ADDITIONS === */
+        .ladder { display:flex; flex-direction:column; gap:10px; width:min(92vw,820px); }
+        .rung { display:flex; align-items:center; gap:14px; background:var(--bg-card); border:1px solid var(--border);
+                border-radius:8px; padding:clamp(.5rem,1.4vw,.9rem) clamp(.7rem,1.8vw,1.2rem); }
+        .rung .yr { font-family:var(--font-mono); font-size:var(--small-size); color:var(--text-muted); min-width:70px; }
+        .rung .nm { font-weight:800; font-size:var(--h3-size); }
+        .rung .ds { font-size:var(--small-size); color:var(--text-secondary); margin-left:auto; text-align:right; }
+        .rung.r1 { border-left:3px solid var(--accent-blue); }
+        .rung.r2 { border-left:3px solid var(--accent-green); }
+        .rung.r3 { border-left:3px solid var(--accent-orange); }
+        .rung.r4 { border-left:6px solid var(--accent-purple); background:#241f33;
+                   margin-top:18px; padding-top:clamp(.7rem,1.7vw,1.1rem); padding-bottom:clamp(.7rem,1.7vw,1.1rem); }
+        .rung.r4 .nm { color:var(--accent-purple); }
+        .rung.r4 .ds { color:var(--text-primary); font-weight:600; }
+        .wall { font-family:var(--font-mono); font-size:var(--small-size); color:var(--accent-red);
+                letter-spacing:.15em; text-transform:uppercase; margin-bottom:var(--element-gap); }
+        .loop-list { display:flex; flex-direction:column; gap:10px; width:min(90vw,560px); }
+        .loop-item { display:flex; align-items:center; gap:12px; background:var(--bg-card); border:1px solid var(--border);
+                     border-left:3px solid var(--accent-green); border-radius:8px; padding:.55rem 1rem;
+                     font-family:var(--font-mono); font-size:var(--code-size); }
+        .loop-item .w { color:var(--accent-green); font-weight:700; min-width:130px; }
+        .loop-item .d { color:var(--text-secondary); }
+        .vs { display:flex; gap:var(--content-gap); width:min(92vw,860px); }
+        .vs > div { flex:1; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:clamp(.8rem,2vw,1.4rem); }
+        .vs h3 { margin-bottom:.4rem; }
+        .vs .a { border-top:3px solid var(--text-muted); }
+        .vs .b { border-top:3px solid var(--accent-purple); }
+        .six { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:min(92vw,820px); }
+        @media (max-width:700px){ .six{grid-template-columns:repeat(2,1fr);} .vs{flex-direction:column;} }
+        .six .c { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:.7rem .9rem; }
+        .six .c b { display:block; font-family:var(--font-mono); font-size:var(--code-size); color:var(--accent-purple); margin-bottom:2px; }
+        .six .c span { font-size:var(--small-size); color:var(--text-secondary); }
+        .cmd { display:flex; flex-direction:column; gap:12px; width:min(90vw,640px); }
+        .cmd .row { background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:.8rem 1.1rem; }
+        .cmd code { font-family:var(--font-mono); color:var(--accent-green); font-size:var(--h3-size); font-weight:700; }
+        .cmd p { margin-top:.25rem; font-size:var(--body-size); }
+        .big-word { font-size:clamp(3rem,14vw,9rem); font-weight:800; letter-spacing:-.04em; }
+        .kicker { font-family:var(--font-mono); font-size:var(--small-size); color:var(--accent-orange);
+                  letter-spacing:.15em; text-transform:uppercase; margin-bottom:var(--element-gap); }
+        .qr-row { display:flex; gap:clamp(1.5rem,5vw,4rem); align-items:center; justify-content:center; margin-top:var(--content-gap); }
+        .qr-row figure { text-align:center; }
+        .qr-row img { width:clamp(110px,18vw,180px); border-radius:8px; background:#fff; padding:6px; }
+        .qr-row figcaption { font-family:var(--font-mono); font-size:var(--small-size); color:var(--text-secondary); margin-top:.4rem; }
+        svg .lbl { font-family:'JetBrains Mono',monospace; font-size:13px; fill:#e6edf3; }
+        svg .lbl-s { font-family:'JetBrains Mono',monospace; font-size:11px; fill:#8b949e; }
+        svg .bx { fill:#1c2128; stroke:#30363d; }
+        .link-strip { font-family:var(--font-mono); font-size:var(--body-size); color:var(--accent-blue); }
+
+        /* === v2 ADDITIONS === */
+        .slide h2 { color: var(--accent-purple); }
+        .title-slide h1 { color: var(--text-primary); }
+        .slide h2 .em-green { color: var(--accent-green); }
+        .timeline { display:flex; align-items:stretch; gap:0; width:min(96vw,1120px); }
+        .tl-step { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; padding:0 8px; }
+        .tl-dot { width:16px; height:16px; border-radius:50%; background:var(--bg-card); border:3px solid var(--text-muted); margin-bottom:14px; z-index:2; }
+        .tl-step::before { content:''; position:absolute; top:8px; left:0; width:50%; height:3px; background:var(--border); }
+        .tl-step::after  { content:''; position:absolute; top:8px; left:50%; width:50%; height:3px; background:var(--border); }
+        .tl-step:first-child::before, .tl-step:last-child::after { display:none; }
+        .tl-name { font-size:var(--h3-size); font-weight:800; margin-bottom:6px; }
+        .tl-desc { font-size:var(--small-size); color:var(--text-secondary); line-height:1.45; }
+        .tl-step.s1 .tl-dot { border-color:var(--accent-blue); }
+        .tl-step.s2 .tl-dot { border-color:var(--accent-green); }
+        .tl-step.s3 .tl-dot { border-color:var(--accent-orange); }
+        .tl-step.s4 .tl-dot { border-color:var(--accent-purple); background:var(--accent-purple); }
+        .tl-step.s1 .tl-name { color:var(--accent-blue); }
+        .tl-step.s2 .tl-name { color:var(--accent-green); }
+        .tl-step.s3 .tl-name { color:var(--accent-orange); }
+        .tl-step.s4 .tl-name { color:var(--accent-purple); }
+        .tl-step.s4 .tl-desc { font-size:calc(var(--h2-size) * 1.15); color:var(--accent-purple); font-weight:800; line-height:1; margin-top:-6px; }
+        @media (max-width:760px){ .tl-desc{font-size:.68rem} }
+        .side { display:flex; gap:var(--content-gap); align-items:center; width:min(94vw,980px); }
+        .side > .l { flex:1.1; } .side > .r { flex:1; }
+        @media (max-width:820px){ .side{flex-direction:column;} }
+        .logo-row { display:flex; gap:clamp(1.5rem,6vw,5rem); align-items:flex-start; justify-content:center; }
+        .logo-card { display:flex; flex-direction:column; align-items:center; gap:14px; }
+        .logo-card .mark { width:clamp(80px,12vw,120px); height:clamp(80px,12vw,120px); display:flex; align-items:center; justify-content:center;
+                           background:var(--bg-card); border:1px solid var(--border); border-radius:20px; }
+        .logo-card code { font-family:var(--font-mono); font-size:var(--h2-size); font-weight:700; color:var(--accent-green); }
+        .logo-card .who { font-family:var(--font-mono); font-size:var(--small-size); color:var(--text-secondary); }
+        .src-link { font-family:var(--font-mono); font-size:var(--small-size); color:var(--accent-blue); text-decoration:none; border-bottom:1px solid rgba(121,192,255,.35); }
+        .badge { display:inline-block; font-family:var(--font-mono); font-size:.62rem; padding:2px 8px; border-radius:20px;
+                 background:rgba(121,192,255,.14); color:var(--accent-blue); border:1px solid rgba(121,192,255,.35); margin-left:8px; vertical-align:middle; }
+</style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <nav class="nav-dots" id="navDots"></nav>
+    <div class="edit-hotzone"></div>
+    <button class="edit-toggle" id="editToggle" title="Edit mode (E)">Edit</button>
+
+    <!-- === 1: TITLE === -->
+    <section class="slide title-slide">
+        <div class="slide-content center">
+            <h1 class="reveal" style="letter-spacing:-0.02em">What exactly is<br><span style="color:var(--accent-purple)">loop engineering?</span></h1>
+            <p class="author reveal">by - Emmanuel Orozco 🎸</p>
+        </div>
+    </section>
+
+    <!-- === 2: DEFINITION === -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">01 / Definition</p>
+            <h2 class="reveal">A loop is a self-guided prompt<br>that automates labor.</h2>
+            <p class="reveal">That's it. Thank you very much, good night.</p>
+        </div>
+    </section>
+
+    <!-- === CRON OBJECTION === -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">01 / Definition</p>
+            <h2 class="reveal">"So... it's just a cron job?"</h2>
+        </div>
+    </section>
+
+    <!-- === 3: HOW WE GOT HERE (horizontal timeline) === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">02 / How we got here</p>
+            <div class="timeline reveal">
+                <div class="tl-step s1">
+                    <span class="tl-dot"></span>
+                    <span class="tl-name">Prompt</span>
+                    <span class="tl-desc">the personality<br>of your agent</span>
+                </div>
+                <div class="tl-step s2">
+                    <span class="tl-dot"></span>
+                    <span class="tl-name">Context</span>
+                    <span class="tl-desc">fetching<br>real time data</span>
+                </div>
+                <div class="tl-step s3">
+                    <span class="tl-dot"></span>
+                    <span class="tl-name">Harness</span>
+                    <span class="tl-desc">how long<br>does it go</span>
+                </div>
+                <div class="tl-step s4">
+                    <span class="tl-dot"></span>
+                    <span class="tl-name">Loop</span>
+                    <span class="tl-desc">?</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === 4: PROMPT ENGINEERING === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">02 / Prompt engineering</p>
+            <h2 class="reveal">You write better prompts.</h2>
+            <svg class="reveal" viewBox="0 0 720 150" width="min(92vw,720px)">
+                <rect class="bx" x="10" y="45" width="170" height="60" rx="8"/>
+                <text class="lbl" x="95" y="72" text-anchor="middle">prompt</text>
+                <text class="lbl-s" x="95" y="92" text-anchor="middle">who you are</text>
+                <path d="M185 75 H265" stroke="#8b949e" stroke-width="2" marker-end="url(#a5)"/>
+                <rect class="bx" x="275" y="35" width="170" height="80" rx="8" stroke="#bc8cff"/>
+                <text class="lbl" x="360" y="70" text-anchor="middle">model</text>
+                <text class="lbl-s" x="360" y="90" text-anchor="middle">training data only</text>
+                <path d="M450 75 H530" stroke="#8b949e" stroke-width="2" marker-end="url(#a5)"/>
+                <rect class="bx" x="540" y="45" width="170" height="60" rx="8"/>
+                <text class="lbl" x="625" y="80" text-anchor="middle">answer</text>
+                <defs><marker id="a5" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8b949e"/></marker></defs>
+            </svg>
+            <p class="reveal">Custom instructions. Personality. Tone.<br>The agent knows nothing except what you type.</p>
+        </div>
+    </section>
+
+    <!-- === 5: WALL 1 + SYSTEM PROMPT EXAMPLE === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="wall reveal">The wall</p>
+            <div class="side reveal">
+                <div class="l">
+                    <h2>It only knows<br>its training set.</h2>
+                    <p>Ask about last week and it's guessing.</p>
+                </div>
+                <div class="r">
+                    <div class="code-block">
+<span class="cm"># system prompt</span><br>
+<span class="str">"You are a QA engineer.</span><br>
+<span class="str">&nbsp;You are patient and precise.</span><br>
+<span class="str">&nbsp;You never guess — you test."</span><br><br>
+<span class="cm"># user</span><br>
+<span class="str">"Did the deploy break anything</span><br>
+<span class="str">&nbsp;this morning?"</span><br><br>
+<span class="var">→ no idea. it wasn't there.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === 6: CONTEXT ENGINEERING === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">03 / Context engineering</p>
+            <h2 class="reveal">Let it go get what it doesn't know.</h2>
+            <svg class="reveal" viewBox="0 0 720 240" width="min(92vw,720px)">
+                <rect class="bx" x="270" y="90" width="180" height="70" rx="10" stroke="#bc8cff"/>
+                <text class="lbl" x="360" y="120" text-anchor="middle">agent</text>
+                <text class="lbl-s" x="360" y="140" text-anchor="middle">fills its own context</text>
+                <rect class="bx" x="40" y="20" width="140" height="46" rx="8" stroke="#7ee787"/>
+                <text class="lbl" x="110" y="48" text-anchor="middle">web search</text>
+                <rect class="bx" x="40" y="180" width="140" height="46" rx="8" stroke="#7ee787"/>
+                <text class="lbl" x="110" y="208" text-anchor="middle">MCP</text>
+                <rect class="bx" x="540" y="20" width="140" height="46" rx="8" stroke="#7ee787"/>
+                <text class="lbl" x="610" y="48" text-anchor="middle">files</text>
+                <rect class="bx" x="540" y="180" width="140" height="46" rx="8" stroke="#7ee787"/>
+                <text class="lbl" x="610" y="208" text-anchor="middle">APIs</text>
+                <path d="M270 110 L185 55" stroke="#7ee787" stroke-width="1.6" marker-end="url(#a7)"/>
+                <path d="M185 190 L270 140" stroke="#7ee787" stroke-width="1.6" marker-end="url(#a7)"/>
+                <path d="M450 110 L535 55" stroke="#7ee787" stroke-width="1.6" marker-end="url(#a7)"/>
+                <path d="M535 190 L450 140" stroke="#7ee787" stroke-width="1.6" marker-end="url(#a7)"/>
+                <defs><marker id="a7" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#7ee787"/></marker></defs>
+            </svg>
+        </div>
+    </section>
+
+    <!-- === 7: WALL 2 (labelled boxes) === -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="wall reveal">The wall</p>
+            <svg class="reveal" viewBox="0 0 620 350" width="min(86vw,600px)">
+                <rect x="90" y="80" width="360" height="230" rx="10" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+                <text class="lbl-s" x="270" y="332" text-anchor="middle">context window</text>
+                <g fill="#1c2128" stroke="#30363d">
+                    <rect x="106" y="262" width="328" height="34" rx="5"/>
+                    <rect x="106" y="222" width="328" height="34" rx="5"/>
+                    <rect x="106" y="182" width="328" height="34" rx="5"/>
+                    <rect x="106" y="142" width="328" height="34" rx="5"/>
+                    <rect x="106" y="102" width="328" height="34" rx="5"/>
+                </g>
+                <text class="lbl-s" x="122" y="284">system prompt</text>
+                <text class="lbl-s" x="122" y="244">your message</text>
+                <text class="lbl-s" x="122" y="204">web search result</text>
+                <text class="lbl-s" x="122" y="164">file contents</text>
+                <text class="lbl-s" x="122" y="124">tool output</text>
+                <line x1="76" y1="88" x2="464" y2="88" stroke="#ff7b72" stroke-width="2" stroke-dasharray="7 5"/>
+                <text class="lbl-s" x="476" y="92" fill="#ff7b72">limit</text>
+                <g fill="#1c2128" stroke="#ff7b72">
+                    <rect x="130" y="42" width="320" height="32" rx="5" transform="rotate(-4 290 58)"/>
+                    <rect x="190" y="6" width="320" height="32" rx="5" transform="rotate(6 350 22)"/>
+                </g>
+                <text class="lbl-s" x="290" y="63" text-anchor="middle" fill="#ff7b72" transform="rotate(-4 290 58)">more tool output</text>
+                <text class="lbl-s" x="350" y="27" text-anchor="middle" fill="#ff7b72" transform="rotate(6 350 22)">another file</text>
+            </svg>
+        </div>
+    </section>
+
+    <!-- === 8: HARNESS ENGINEERING === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">04 / Harness engineering</p>
+            <h2 class="reveal">Manage the context from outside.</h2>
+            <svg class="reveal" viewBox="0 0 760 290" width="min(92vw,760px)">
+                <rect x="15" y="15" width="730" height="260" rx="12" fill="none" stroke="#ffa657" stroke-width="2" stroke-dasharray="8 6"/>
+                <text class="lbl-s" x="35" y="42" fill="#ffa657">harness</text>
+                <rect class="bx" x="45" y="65" width="200" height="190" rx="8"/>
+                <text class="lbl" x="145" y="92" text-anchor="middle">task list</text>
+                <g fill="#0d1117" stroke="#30363d">
+                    <rect x="62" y="108" width="166" height="26" rx="4"/>
+                    <rect x="62" y="142" width="166" height="26" rx="4"/>
+                    <rect x="62" y="176" width="166" height="26" rx="4"/>
+                    <rect x="62" y="210" width="166" height="26" rx="4"/>
+                </g>
+                <text class="lbl-s" x="145" y="126" text-anchor="middle">task 1 ✓</text>
+                <text class="lbl-s" x="145" y="160" text-anchor="middle">task 2 ✓</text>
+                <text class="lbl-s" x="145" y="194" text-anchor="middle">task 3 ←</text>
+                <text class="lbl-s" x="145" y="228" text-anchor="middle">task 4</text>
+                <path d="M252 160 H332" stroke="#ffa657" stroke-width="2" marker-end="url(#a9)"/>
+                <text class="lbl-s" x="292" y="150" text-anchor="middle" fill="#ffa657">one at a time</text>
+                <rect class="bx" x="342" y="120" width="180" height="80" rx="10" stroke="#bc8cff"/>
+                <text class="lbl" x="432" y="166" text-anchor="middle">agent</text>
+                <path d="M527 145 H587" stroke="#8b949e" stroke-width="1.6" marker-end="url(#a9b)"/>
+                <path d="M527 175 H587" stroke="#8b949e" stroke-width="1.6" marker-end="url(#a9b)"/>
+                <rect class="bx" x="595" y="85" width="120" height="46" rx="8" stroke="#79c0ff"/>
+                <text class="lbl-s" x="655" y="113" text-anchor="middle">sub-agent</text>
+                <rect class="bx" x="595" y="155" width="120" height="46" rx="8" stroke="#79c0ff"/>
+                <text class="lbl-s" x="655" y="183" text-anchor="middle">sub-agent</text>
+                <rect class="bx" x="595" y="215" width="120" height="42" rx="8" stroke="#79c0ff"/>
+                <text class="lbl-s" x="655" y="241" text-anchor="middle">worktree</text>
+                <defs>
+                    <marker id="a9" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#ffa657"/></marker>
+                    <marker id="a9b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8b949e"/></marker>
+                </defs>
+            </svg>
+            <p class="reveal">Hours-long and days-long tasks actually finish.</p>
+        </div>
+    </section>
+
+    <!-- === 9: TODAY === -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">05 / Today</p>
+            <h2 class="reveal">Agents have fresh information.<br>Agents can work for hours.</h2>
+            <div class="highlight-box reveal">
+                <p>And we're still doing a surprising amount of <strong>manual labor</strong>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- === 10: QUESTION TO THE ROOM === -->
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <h2 class="reveal">What eats<br>most of your time?</h2>
+        </div>
+    </section>
+
+    <!-- === 11: TESTING === -->
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="kicker reveal">For me</p>
+            <h2 class="big-word reveal em-green">Testing</h2>
+        </div>
+    </section>
+
+    <!-- === 12: THE OBVIOUS MOVE === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">06 / The obvious move</p>
+            <svg class="reveal" viewBox="0 0 700 300" width="min(92vw,700px)">
+                <rect class="bx" x="90" y="40" width="200" height="72" rx="10" stroke="#79c0ff"/>
+                <text class="lbl" x="190" y="70" text-anchor="middle">agent A</text>
+                <text class="lbl-s" x="190" y="92" text-anchor="middle">builds</text>
+                <rect class="bx" x="410" y="40" width="200" height="72" rx="10" stroke="#7ee787"/>
+                <text class="lbl" x="510" y="70" text-anchor="middle">agent B</text>
+                <text class="lbl-s" x="510" y="92" text-anchor="middle">tests</text>
+                <path d="M295 76 H403" stroke="#8b949e" stroke-width="2" marker-end="url(#a12)"/>
+                <path d="M510 117 V170 Q510 195 485 195 H215 Q190 195 190 170 V117" fill="none" stroke="#ff7b72" stroke-width="2" marker-end="url(#a12r)"/>
+                <text class="lbl-s" x="350" y="215" text-anchor="middle" fill="#ff7b72">reports what broke</text>
+                <g opacity="0.85">
+                    <circle cx="350" cy="262" r="12" fill="none" stroke="#484f58" stroke-width="2"/>
+                    <path d="M350 274 V292 M338 300 L350 292 L362 300" fill="none" stroke="#484f58" stroke-width="2"/>
+                    <text class="lbl-s" x="385" y="285" fill="#484f58">you, outside the loop</text>
+                </g>
+                <defs>
+                    <marker id="a12" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8b949e"/></marker>
+                    <marker id="a12r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#ff7b72"/></marker>
+                </defs>
+            </svg>
+            <p class="reveal">If an agent can build it, an agent can test it.</p>
+        </div>
+    </section>
+
+    <!-- === 14: THE MISSING WORD === -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">08 / Back to the definition</p>
+            <h2 class="reveal">A self-guided prompt that<br>automates labor<span class="em-green"> — with intelligence.</span></h2>
+        </div>
+    </section>
+
+    <!-- === 15: WHY INTELLIGENCE MATTERS === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">08 / Then it spread</p>
+            <h2 class="reveal">You can automate anything —<br>once you know what to look for.</h2>
+            <div class="highlight-box reveal">
+                <p>The loop <strong>explores the unknown first</strong>, finds the real problem,<br>
+                and then writes the automation itself.</p>
+            </div>
+            <div class="loop-list reveal" style="margin-top:1rem">
+                <div class="loop-item"><span class="w">testing</span><span class="d">find the edge cases nobody wrote</span></div>
+                <div class="loop-item"><span class="w">drafting</span><span class="d">turn this week's work into content</span></div>
+                <div class="loop-item"><span class="w">review</span><span class="d">check the PR before I do <span class="badge">codex auto</span></span></div>
+                <div class="loop-item"><span class="w">scrap</span><span class="d">collect what's out there</span></div>
+                <div class="loop-item"><span class="w">self-improve</span><span class="d">fix what it got wrong last run</span></div>
+                <div class="loop-item"><span class="w">follow-up</span><span class="d">chase what I forgot</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === 16: EXAMPLE INTRO === -->
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">09 / One real example</p>
+            <h2 class="reveal">SEO for a product<br>nobody has time to market.</h2>
+        </div>
+    </section>
+
+    <!-- === 17: THE SEO LOOP === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">09 / The SEO loop</p>
+            <svg class="reveal" viewBox="0 0 880 400" width="min(96vw,940px)">
+                <text x="110" y="26" text-anchor="middle" fill="#ffa657" style="font-family:'JetBrains Mono',monospace;font-size:15px">automations</text>
+                <g>
+                    <rect class="bx" x="12" y="40" width="196" height="48" rx="7" stroke="#ffa657"/>
+                    <text x="110" y="60" text-anchor="middle" fill="#ffa657" style="font-family:'JetBrains Mono',monospace;font-size:14px">daily 8:30</text>
+                    <text x="110" y="79" text-anchor="middle" fill="#e6edf3" style="font-family:'JetBrains Mono',monospace;font-size:14px">reddit demand scan</text>
+                    <rect class="bx" x="12" y="96" width="196" height="48" rx="7" stroke="#ffa657"/>
+                    <text x="110" y="116" text-anchor="middle" fill="#ffa657" style="font-family:'JetBrains Mono',monospace;font-size:14px">weekdays 9:30</text>
+                    <text x="110" y="135" text-anchor="middle" fill="#e6edf3" style="font-family:'JetBrains Mono',monospace;font-size:14px">line-page rollout</text>
+                    <rect class="bx" x="12" y="152" width="196" height="48" rx="7" stroke="#ffa657"/>
+                    <text x="110" y="172" text-anchor="middle" fill="#ffa657" style="font-family:'JetBrains Mono',monospace;font-size:14px">monday 9:00</text>
+                    <text x="110" y="191" text-anchor="middle" fill="#e6edf3" style="font-family:'JetBrains Mono',monospace;font-size:14px">SEO audit</text>
+                    <rect class="bx" x="12" y="208" width="196" height="48" rx="7" stroke="#ffa657"/>
+                    <text x="110" y="228" text-anchor="middle" fill="#ffa657" style="font-family:'JetBrains Mono',monospace;font-size:14px">monthly</text>
+                    <text x="110" y="247" text-anchor="middle" fill="#e6edf3" style="font-family:'JetBrains Mono',monospace;font-size:14px">keyword research</text>
+                    <rect class="bx" x="12" y="264" width="196" height="48" rx="7" stroke="#ffa657"/>
+                    <text x="110" y="284" text-anchor="middle" fill="#ffa657" style="font-family:'JetBrains Mono',monospace;font-size:14px">friday 16:00</text>
+                    <text x="110" y="303" text-anchor="middle" fill="#e6edf3" style="font-family:'JetBrains Mono',monospace;font-size:14px">weekly synthesis</text>
+                </g>
+                <path d="M212 64 L292 152" stroke="#484f58" stroke-width="1.4"/>
+                <path d="M212 120 L292 168" stroke="#484f58" stroke-width="1.4"/>
+                <path d="M212 176 L292 180" stroke="#484f58" stroke-width="1.4"/>
+                <path d="M212 232 L292 194" stroke="#484f58" stroke-width="1.4"/>
+                <path d="M212 288 L292 210" stroke="#484f58" stroke-width="1.4"/>
+                <text x="382" y="130" text-anchor="middle" fill="#79c0ff" style="font-family:'JetBrains Mono',monospace;font-size:15px">sub-agents + skills</text>
+                <rect class="bx" x="292" y="142" width="180" height="82" rx="9" stroke="#79c0ff"/>
+                <text x="382" y="172" text-anchor="middle" fill="#e6edf3" style="font-family:'JetBrains Mono',monospace;font-size:17px">marketing-*</text>
+                <text x="382" y="193" text-anchor="middle" fill="#8b949e" style="font-family:'JetBrains Mono',monospace;font-size:13px">seo · reddit · x · analyst</text>
+                <text x="382" y="212" text-anchor="middle" fill="#8b949e" style="font-family:'JetBrains Mono',monospace;font-size:13px">each runs a SKILL.md</text>
+                <rect class="bx" x="292" y="252" width="180" height="62" rx="9" stroke="#7ee787"/>
+                <text x="382" y="276" text-anchor="middle" fill="#7ee787" style="font-family:'JetBrains Mono',monospace;font-size:15px">state</text>
+                <text x="382" y="298" text-anchor="middle" fill="#8b949e" style="font-family:'JetBrains Mono',monospace;font-size:13px">marketing/keywords.md</text>
+                <path d="M382 228 V248" stroke="#7ee787" stroke-width="1.6" marker-end="url(#a17g)"/>
+                <path d="M312 252 V232" stroke="#7ee787" stroke-width="1.6" marker-end="url(#a17g)"/>
+                <path d="M477 183 H557" stroke="#8b949e" stroke-width="2" marker-end="url(#a17)"/>
+                <rect class="bx" x="567" y="142" width="180" height="82" rx="9"/>
+                <text x="657" y="176" text-anchor="middle" fill="#e6edf3" style="font-family:'JetBrains Mono',monospace;font-size:17px">one PR</text>
+                <text x="657" y="199" text-anchor="middle" fill="#8b949e" style="font-family:'JetBrains Mono',monospace;font-size:13px">+ an issue in the inbox</text>
+                <path d="M752 183 H796" stroke="#bc8cff" stroke-width="2" marker-end="url(#a17p)"/>
+                <rect x="800" y="148" width="72" height="72" rx="10" fill="#1c2128" stroke="#bc8cff" stroke-width="2"/>
+                <text x="836" y="182" text-anchor="middle" fill="#bc8cff" style="font-family:'JetBrains Mono',monospace;font-size:15px">me</text>
+                <text x="836" y="202" text-anchor="middle" fill="#bc8cff" style="font-family:'JetBrains Mono',monospace;font-size:15px">merge</text>
+                <text x="836" y="243" text-anchor="middle" fill="#bc8cff" style="font-family:'JetBrains Mono',monospace;font-size:12px">the only</text>
+                <text x="836" y="259" text-anchor="middle" fill="#bc8cff" style="font-family:'JetBrains Mono',monospace;font-size:12px">human step</text>
+                <defs>
+                    <marker id="a17" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8b949e"/></marker>
+                    <marker id="a17g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#7ee787"/></marker>
+                    <marker id="a17p" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#bc8cff"/></marker>
+                </defs>
+            </svg>
+            <p class="reveal">I designed it once. I don't prompt any of it.</p>
+        </div>
+    </section>
+
+    <!-- === 18: THE SIX PIECES === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">10 / What's inside a loop</p>
+            <div class="six reveal">
+                <div class="c"><b>automations</b><span>the heartbeat, on a schedule</span></div>
+                <div class="c"><b>worktrees</b><span>parallel agents that don't collide</span></div>
+                <div class="c"><b>skills</b><span>project knowledge written once</span></div>
+                <div class="c"><b>connectors</b><span>MCP, touch your real tools</span></div>
+                <div class="c"><b>sub-agents</b><span>the writer is never the checker</span></div>
+                <div class="c"><b>state</b><span>memory on disk, the model forgets</span></div>
+            </div>
+            <p class="reveal" style="margin-top:.9rem">
+                <a class="src-link" href="https://addyosmani.com/blog/loop-engineering/" target="_blank">addyosmani.com/blog/loop-engineering</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- === 19: TWO COMMANDS === -->
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">10 / Two commands</p>
+            <div class="logo-row reveal">
+                <div class="logo-card">
+                    <div class="mark">
+                        <svg viewBox="0 0 24 24" width="58" height="58" fill="none" stroke="#ffa657" stroke-width="1.6">
+                            <path d="M12 2.6l8.2 4.7v9.4L12 21.4 3.8 16.7V7.3z" stroke-linejoin="round"/>
+                            <path d="M8.4 9.6v4.8M12 8.2v7.6M15.6 9.6v4.8" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <code>/loop</code>
+                    <span class="who">Claude Code</span>
+                </div>
+                <div class="logo-card">
+                    <div class="mark">
+                        <svg viewBox="0 0 24 24" width="58" height="58" fill="none" stroke="#7ee787" stroke-width="1.6">
+                            <circle cx="12" cy="12" r="8.4"/>
+                            <path d="M8.6 12.2l2.4 2.4 4.4-4.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <code>/goal</code>
+                    <span class="who">Codex</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- === 20: THANKS === -->
+    <section class="slide title-slide">
+        <div class="slide-content center">
+            <h1 class="reveal">Thanks!</h1>
+            <div class="qr-row reveal">
+                <figure>
+                    <img src="https://emmanuelorozco.com/assets/blog/agents/qr-linkedin.png" alt="LinkedIn QR">
+                    <figcaption>LinkedIn</figcaption>
+                </figure>
+            </div>
+            <p class="author reveal">emmanuelorozco.com</p>
+        </div>
+    </section>
+
+    <script>
+        /* === SLIDE PRESENTATION CONTROLLER === */
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.currentSlide = 0;
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupProgressBar();
+                this.setupNavDots();
+            }
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const idx = Array.from(this.slides).indexOf(entry.target);
+                            this.currentSlide = idx;
+                            this.updateProgress();
+                            this.updateDots();
+                        }
+                    });
+                }, { threshold: 0.5 });
+                this.slides.forEach(s => observer.observe(s));
+            }
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.target.getAttribute('contenteditable')) return;
+                    if (['ArrowDown','ArrowRight','Space','PageDown'].includes(e.code)) { e.preventDefault(); this.next(); }
+                    if (['ArrowUp','ArrowLeft','PageUp'].includes(e.code)) { e.preventDefault(); this.prev(); }
+                });
+            }
+            setupTouchNav() {
+                let startY = 0;
+                document.addEventListener('touchstart', e => startY = e.touches[0].clientY, { passive: true });
+                document.addEventListener('touchend', e => {
+                    const diff = startY - e.changedTouches[0].clientY;
+                    if (Math.abs(diff) > 50) diff > 0 ? this.next() : this.prev();
+                }, { passive: true });
+            }
+            setupProgressBar() { this.progressBar = document.getElementById('progressBar'); }
+            setupNavDots() {
+                const nav = document.getElementById('navDots');
+                this.dots = [];
+                this.slides.forEach((_, i) => {
+                    const dot = document.createElement('button');
+                    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+                    dot.addEventListener('click', () => this.goTo(i));
+                    nav.appendChild(dot);
+                    this.dots.push(dot);
+                });
+            }
+            next() { if (this.currentSlide < this.slides.length - 1) this.goTo(this.currentSlide + 1); }
+            prev() { if (this.currentSlide > 0) this.goTo(this.currentSlide - 1); }
+            goTo(i) { this.slides[i].scrollIntoView({ behavior: 'smooth' }); }
+            updateProgress() { this.progressBar.style.width = ((this.currentSlide + 1) / this.slides.length * 100) + '%'; }
+            updateDots() { this.dots.forEach((d, i) => d.classList.toggle('active', i === this.currentSlide)); }
+        }
+        new SlidePresentation();
+
+        /* === INLINE EDITOR === */
+        const editor = {
+            isActive: false,
+            toggleEditMode() {
+                this.isActive = !this.isActive;
+                document.getElementById('editToggle').classList.toggle('active', this.isActive);
+                document.querySelectorAll('h1,h2,h3,p:not(.section-number)').forEach(el => {
+                    el.contentEditable = this.isActive;
+                });
+                if (!this.isActive) {
+                    localStorage.setItem('slides-loop-engineering', document.body.innerHTML);
+                    localStorage.setItem('slides-loop-engineering-v', '2');
+                }
+            }
+        };
+        // Restore saved edits
+        const saved = localStorage.getItem('slides-loop-engineering');
+        if (saved && localStorage.getItem('slides-loop-engineering-v') === '2') document.body.innerHTML = saved;
+
+        // Edit toggle interactions
+        document.getElementById('editToggle').addEventListener('click', () => editor.toggleEditMode());
+        const hotzone = document.querySelector('.edit-hotzone');
+        const editToggle = document.getElementById('editToggle');
+        let hideTimeout = null;
+        hotzone.addEventListener('mouseenter', () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); });
+        hotzone.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+        editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+        editToggle.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+        hotzone.addEventListener('click', () => editor.toggleEditMode());
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) editor.toggleEditMode();
+        });
+        /* === LASER POINTER (toggle with L key) === */
+        let laserOn = false;
+        const laser = document.createElement('div');
+        laser.style.cssText = 'position:fixed;width:12px;height:12px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px 4px rgba(239,68,68,0.5),0 0 20px 8px rgba(239,68,68,0.2);pointer-events:none;z-index:99999;display:none;transform:translate(-50%,-50%);transition:opacity 0.15s;';
+        document.body.appendChild(laser);
+        document.addEventListener('mousemove', (e) => {
+            if (laserOn) { laser.style.left = e.clientX + 'px'; laser.style.top = e.clientY + 'px'; }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'l' || e.key === 'L') {
+                if (e.target.getAttribute('contenteditable')) return;
+                laserOn = !laserOn;
+                laser.style.display = laserOn ? 'block' : 'none';
+                document.body.style.cursor = laserOn ? 'none' : '';
+            }
+        });
+    </script>
+</body>
+</html>
