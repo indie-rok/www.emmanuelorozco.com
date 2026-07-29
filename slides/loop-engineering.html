@@ -86,7 +86,7 @@
         .title-slide { justify-content: center; align-items: center; text-align: center; }
         .title-slide h1 { font-size: var(--title-size); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: var(--element-gap); }
         .title-slide .subtitle { font-size: var(--body-size); color: var(--text-secondary); font-weight: 300; }
-        .title-slide .author { font-size: var(--small-size); color: var(--text-muted); margin-top: var(--content-gap); font-family: var(--font-mono); }
+        .title-slide .author { font-size: var(--body-size); color: var(--text-secondary); margin-top: var(--content-gap); font-family: var(--font-mono); }
 
         /* === SECTION SLIDES === */
         .section-slide { justify-content: center; align-items: center; text-align: center; }
@@ -291,8 +291,7 @@
     <!-- === 1: TITLE === -->
     <section class="slide title-slide">
         <div class="slide-content center">
-            <h1 class="reveal">Loop Engineering</h1>
-            <p class="subtitle reveal">I'll share what I've been learning.<br>You decide if it's a buzzword.</p>
+            <h1 class="reveal" style="letter-spacing:-0.02em">What exactly is<br><span style="color:var(--accent-purple)">loop engineering?</span></h1>
             <p class="author reveal">by - Emmanuel Orozco 🎸</p>
         </div>
     </section>
@@ -303,6 +302,14 @@
             <p class="section-number reveal">01 / Definition</p>
             <h2 class="reveal">A loop is a self-guided prompt<br>that automates labor.</h2>
             <p class="reveal">That's it. Thank you very much, good night.</p>
+        </div>
+    </section>
+
+    <!-- === CRON OBJECTION === -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">01 / Definition</p>
+            <h2 class="reveal">"So... it's just a cron job?"</h2>
         </div>
     </section>
 
@@ -534,21 +541,6 @@
         </div>
     </section>
 
-    <!-- === 13: IT SPREAD === -->
-    <section class="slide">
-        <div class="slide-content center gap-sm">
-            <p class="section-number reveal">07 / Then it spread</p>
-            <div class="loop-list reveal">
-                <div class="loop-item"><span class="w">testing</span><span class="d">find the edge cases nobody wrote</span></div>
-                <div class="loop-item"><span class="w">drafting</span><span class="d">turn this week's work into content</span></div>
-                <div class="loop-item"><span class="w">review</span><span class="d">check the PR before I do <span class="badge">codex auto</span></span></div>
-                <div class="loop-item"><span class="w">scrap</span><span class="d">collect what's out there</span></div>
-                <div class="loop-item"><span class="w">self-improve</span><span class="d">fix what it got wrong last run</span></div>
-                <div class="loop-item"><span class="w">follow-up</span><span class="d">chase what I forgot</span></div>
-            </div>
-        </div>
-    </section>
-
     <!-- === 14: THE MISSING WORD === -->
     <section class="slide">
         <div class="slide-content center">
@@ -560,16 +552,19 @@
     <!-- === 15: WHY INTELLIGENCE MATTERS === -->
     <section class="slide">
         <div class="slide-content center gap-sm">
-            <p class="section-number reveal">08 / The difference</p>
+            <p class="section-number reveal">08 / Then it spread</p>
             <h2 class="reveal">You can automate anything —<br>once you know what to look for.</h2>
             <div class="highlight-box reveal">
                 <p>The loop <strong>explores the unknown first</strong>, finds the real problem,<br>
                 and then writes the automation itself.</p>
             </div>
             <div class="loop-list reveal" style="margin-top:1rem">
-                <div class="loop-item"><span class="w">e2e tests</span><span class="d">but which scenario? → the loop finds it</span></div>
-                <div class="loop-item"><span class="w">refactor</span><span class="d">but which part matters? → the loop decides</span></div>
-                <div class="loop-item"><span class="w">PR review</span><span class="d">you have this. what does it review next time?</span></div>
+                <div class="loop-item"><span class="w">testing</span><span class="d">find the edge cases nobody wrote</span></div>
+                <div class="loop-item"><span class="w">drafting</span><span class="d">turn this week's work into content</span></div>
+                <div class="loop-item"><span class="w">review</span><span class="d">check the PR before I do <span class="badge">codex auto</span></span></div>
+                <div class="loop-item"><span class="w">scrap</span><span class="d">collect what's out there</span></div>
+                <div class="loop-item"><span class="w">self-improve</span><span class="d">fix what it got wrong last run</span></div>
+                <div class="loop-item"><span class="w">follow-up</span><span class="d">chase what I forgot</span></div>
             </div>
         </div>
     </section>
