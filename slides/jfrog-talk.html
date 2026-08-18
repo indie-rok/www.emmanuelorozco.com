@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whoops, I hacked my company</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Libre+Franklin:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2128;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --accent-main: #e6edf3;
+            --accent-green: #7ee787;
+            --accent-blue: #79c0ff;
+            --accent-orange: #ffa657;
+            --accent-red: #ff7b72;
+            --border: #30363d;
+            --font-display: 'Libre Franklin', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --title-size: clamp(2rem, 6vw, 4.5rem);
+            --h2-size: clamp(1.5rem, 4vw, 3rem);
+            --h3-size: clamp(1.1rem, 2.5vw, 1.75rem);
+            --body-size: clamp(0.8rem, 1.5vw, 1.15rem);
+            --code-size: clamp(0.7rem, 1.2vw, 0.95rem);
+            --small-size: clamp(0.65rem, 1vw, 0.85rem);
+            --slide-padding: clamp(1.5rem, 5vw, 5rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+            --element-gap: clamp(0.25rem, 1vw, 1rem);
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow-x: hidden; }
+        html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+        body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-display); }
+        .slide {
+            width: 100vw; height: 100vh; height: 100dvh;
+            overflow: hidden; scroll-snap-align: start;
+            display: flex; flex-direction: column; position: relative;
+            background: var(--bg-primary);
+        }
+        .slide-content {
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
+            max-height: 100%; overflow: hidden; padding: var(--slide-padding);
+        }
+        img { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+        @media (max-height: 700px) {
+            :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --content-gap: clamp(0.4rem, 1.5vw, 1rem); --title-size: clamp(1.25rem, 4.5vw, 2.5rem); --h2-size: clamp(1rem, 3vw, 1.75rem); }
+        }
+        @media (max-width: 600px) { :root { --title-size: clamp(1.25rem, 7vw, 2.5rem); } }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+            html { scroll-behavior: auto; }
+        }
+
+        .reveal { opacity: 0; transform: translateY(25px); transition: opacity var(--duration-normal) var(--ease-out-expo), transform var(--duration-normal) var(--ease-out-expo); }
+        .slide.visible .reveal { opacity: 1; transform: translateY(0); }
+        .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .reveal:nth-child(2) { transition-delay: 0.15s; }
+        .reveal:nth-child(3) { transition-delay: 0.25s; }
+        .reveal:nth-child(4) { transition-delay: 0.35s; }
+        .reveal:nth-child(5) { transition-delay: 0.45s; }
+
+        .title-slide { justify-content: center; align-items: center; text-align: center; }
+        .title-slide h1 { font-size: var(--title-size); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: var(--element-gap); color: var(--text-primary); }
+        .title-slide .subtitle { font-size: var(--body-size); color: var(--text-secondary); font-weight: 300; }
+        .title-slide .author { font-size: var(--body-size); color: var(--text-secondary); margin-top: var(--content-gap); font-family: var(--font-mono); }
+
+        .section-slide { justify-content: center; align-items: center; text-align: center; }
+        .section-number { font-family: var(--font-mono); font-size: var(--small-size); color: var(--text-secondary); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: var(--element-gap); }
+        .slide h2 { font-size: var(--h2-size); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: var(--content-gap); color: var(--text-primary); }
+        .slide h3 { font-size: var(--h3-size); font-weight: 600; margin-bottom: var(--element-gap); }
+        .slide p { font-size: var(--body-size); color: var(--text-secondary); line-height: 1.6; max-width: 760px; }
+
+        .code-block {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;
+            padding: clamp(0.75rem, 2vw, 1.5rem); font-family: var(--font-mono);
+            font-size: var(--code-size); line-height: 1.65; overflow: hidden;
+            max-width: min(90vw, 740px); width: 100%; text-align: left;
+        }
+        .code-block .str { color: var(--accent-green); }
+        .code-block .cm { color: var(--text-muted); }
+        .code-block .var { color: var(--accent-red); }
+
+        .highlight-box {
+            background: var(--bg-card); border-left: 3px solid var(--accent-blue);
+            padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.75rem, 2vw, 1.5rem);
+            border-radius: 0 6px 6px 0; margin: var(--element-gap) 0;
+            font-size: var(--body-size); max-width: 740px;
+        }
+        .center { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .center .code-block { text-align: left; }
+        .gap-sm { gap: var(--element-gap); }
+        .mt { margin-top: var(--content-gap); }
+        .big-word { font-size: clamp(4rem, 16vw, 12rem); font-weight: 800; letter-spacing: -0.06em; line-height: .9; color: var(--text-primary); }
+        .one-word { font-size: clamp(4rem, 15vw, 11rem); font-weight: 800; letter-spacing: -0.05em; line-height: .9; color: var(--text-primary); }
+
+        .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent-green); z-index: 1000; transition: width 0.3s; width: 0; }
+        .nav-dots { position: fixed; right: clamp(8px, 1.5vw, 20px); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+        .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); cursor: pointer; transition: background 0.3s, transform 0.3s; border: none; padding: 0; }
+        .nav-dot.active { background: var(--accent-green); transform: scale(1.4); }
+        .edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+        .edit-toggle {
+            position: fixed; top: 12px; left: 12px; background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-size: 14px;
+            cursor: pointer; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+        [contenteditable="true"] { outline: 2px dashed var(--accent-green); outline-offset: 4px; border-radius: 4px; }
+        .slide::before {
+            content: ''; position: absolute; left: 0; top: 0; width: 3px; height: 100%;
+            background: linear-gradient(to bottom, var(--accent-green), transparent);
+            opacity: 0.25;
+        }
+
+        .em-green { color: var(--accent-green); }
+        .em-red { color: var(--accent-red); }
+        .em-blue { color: var(--accent-blue); }
+        .kicker { font-family: var(--font-mono); font-size: var(--small-size); color: var(--accent-orange);
+                  letter-spacing: .15em; text-transform: uppercase; margin-bottom: var(--element-gap); }
+
+        svg .lbl { font-family:'JetBrains Mono',monospace; font-size:15px; fill:#e6edf3; }
+        svg .lbl-s { font-family:'JetBrains Mono',monospace; font-size:12px; fill:#8b949e; }
+        svg .bx { fill:#1c2128; stroke:#30363d; }
+
+        .journey { display:flex; gap:clamp(1rem,4vw,3rem); align-items:center; justify-content:center; }
+        .journey .step { display:flex; flex-direction:column; align-items:center; gap:10px;
+                         background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+                         padding:clamp(.9rem,2.5vw,1.6rem) clamp(1.1rem,3vw,2rem); }
+        .journey .step .e { font-size:clamp(2.2rem,6vw,4rem); }
+        .journey .step .t { font-family:var(--font-mono); font-size:var(--code-size); color:var(--text-secondary); }
+        .journey .arr { font-size:clamp(1.4rem,3vw,2.2rem); color:var(--text-muted); }
+
+        .vs { display:flex; gap:var(--content-gap); width:min(92vw,860px); }
+        .vs > div { flex:1; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:clamp(.8rem,2vw,1.4rem); text-align:left; }
+        .vs h3 { margin-bottom:.4rem; }
+        .vs .a { border-top:3px solid var(--accent-red); }
+        .vs .b { border-top:3px solid var(--accent-orange); }
+        @media (max-width:700px){ .vs{flex-direction:column;} }
+
+
+        .atk-timeline { display:flex; align-items:stretch; gap:0; width:min(96vw,1100px); }
+        .atk { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; padding:0 6px; }
+        .atk-dot { width:14px; height:14px; border-radius:50%; background:var(--bg-card); border:3px solid var(--accent-red); margin-bottom:14px; z-index:2; }
+        .atk::before { content:''; position:absolute; top:7px; left:0; width:50%; height:3px; background:var(--border); }
+        .atk::after  { content:''; position:absolute; top:7px; left:50%; width:50%; height:3px; background:var(--border); }
+        .atk:first-child::before, .atk:last-child::after { display:none; }
+        .atk .w { font-family:var(--font-mono); font-size:clamp(.65rem,1vw,.85rem); color:var(--accent-orange); }
+        .atk .n { font-size:clamp(.95rem,1.8vw,1.35rem); font-weight:800; margin-top:4px; }
+        .atk .d { font-family:var(--font-mono); font-size:clamp(.7rem,1.2vw,.95rem); color:var(--accent-green); margin-top:6px; }
+        .attack-grid { display:grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap:14px; width:min(96vw,1120px); }
+        .attack-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:18px 14px; text-align:left; min-height:150px; }
+        .attack-card .name { font-size:clamp(1rem,1.6vw,1.4rem); color:var(--text-primary); margin-bottom:12px; }
+        .attack-card .count { font-family:var(--font-mono); font-size:clamp(.85rem,1.25vw,1rem); color:var(--accent-green); line-height:1.35; }
+        .attack-card .note { font-size:var(--small-size); color:var(--text-secondary); margin-top:10px; line-height:1.4; }
+        @media (max-width:900px){ .attack-grid{grid-template-columns:repeat(2, minmax(130px, 1fr));} }
+
+        .policy-list { display:flex; flex-direction:column; gap:12px; width:min(92vw,720px); }
+        .policy { display:flex; align-items:center; gap:16px; background:var(--bg-card); border:1px solid var(--border);
+                  border-radius:8px; padding:clamp(.6rem,1.6vw,1rem) clamp(.8rem,2vw,1.3rem); text-align:left; }
+        .policy .pe { font-size:clamp(1.4rem,3vw,2.2rem); }
+        .policy .pt .head { font-size:var(--h3-size); color:var(--text-primary); }
+        .policy .pt span { display:block; font-size:var(--small-size); color:var(--text-secondary); margin-top:2px; }
+        .policy.p1 { border-left:3px solid var(--accent-red); }
+        .policy.p2 { border-left:3px solid var(--accent-orange); }
+        .policy.p3 { border-left:3px solid var(--accent-blue); }
+
+        .faq-list, .more-list { display:flex; flex-direction:column; gap:12px; width:min(92vw,780px); }
+        .faq-item, .more-item { background:var(--bg-card); border:1px solid var(--border); border-left:3px solid var(--accent-green);
+                    border-radius:8px; padding:clamp(.6rem,1.6vw,1rem) clamp(.8rem,2vw,1.3rem); text-align:left; }
+        .faq-item .q, .more-item .q { font-weight:800; font-size:var(--h3-size); color:var(--text-primary); }
+        .faq-item .a, .more-item .a { font-size:var(--body-size); color:var(--text-secondary); margin-top:4px; }
+        .faq-item .a code { font-family:var(--font-mono); color:var(--accent-green); }
+
+        .qr-row { display:flex; gap:clamp(1.5rem,5vw,4rem); align-items:center; justify-content:center; margin-top:var(--content-gap); }
+        .qr-row figure { text-align:center; }
+        .qr-row img { width:clamp(110px,18vw,180px); border-radius:8px; background:#fff; padding:6px; }
+        .qr-row figcaption { font-family:var(--font-mono); font-size:var(--small-size); color:var(--text-secondary); margin-top:.4rem; }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <nav class="nav-dots" id="navDots"></nav>
+    <div class="edit-hotzone"></div>
+    <button class="edit-toggle" id="editToggle" title="Edit mode (E)">Edit</button>
+
+    <section class="slide title-slide">
+        <div class="slide-content center">
+            <h1 class="reveal">Whoops, I hacked<br><span style="color:var(--accent-red)">my company</span></h1>
+            <p class="subtitle reveal" style="font-family:var(--font-mono)">(all I did was <span class="em-green">npm install</span>)</p>
+            <p class="author reveal">by Emmanuel Orozco 🎸</p>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">01 / The question</p>
+            <h2 class="reveal">How many times have you<br><span class="em-green">read the source code</span><br>of the dependencies you install?</h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">01 / Day one at the new job</p>
+            <div class="journey reveal">
+                <div class="step"><span class="e">💻</span><span class="t">new laptop</span></div>
+                <span class="arr">→</span>
+                <div class="step"><span class="e">📥</span><span class="t">git clone</span></div>
+                <span class="arr">→</span>
+                <div class="step"><span class="e">☕</span><span class="t">npm install</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">01 / Quick question</p>
+            <h2 class="reveal">Who knows what a supply chain attack is?</h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="kicker reveal">Supply chain attack</p>
+            <h2 class="reveal">A dependency can have side effects.</h2>
+            <p class="reveal">The package installs successfully, but the code that runs during install can read files, tokens, or credentials from the machine running it.</p>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">01 / Not hypothetical</p>
+            <h2 class="reveal">This has already happened. <span class="em-red">Many times.</span></h2>
+            <div class="vs reveal">
+                <div class="a">
+                    <h3>🪱 Shai Hulud <span style="color:var(--text-muted);font-weight:400">· Sept 2025</span></h3>
+                    <p>Self-replicating npm worm. 500+ packages infected.</p>
+                </div>
+                <div class="b">
+                    <h3>📦 Axios <span style="color:var(--text-muted);font-weight:400">· Mar 2026</span></h3>
+                    <p>~479M downloads/month. Malicious for hours.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="kicker reveal">The scary part</p>
+            <h2 class="reveal">It can go undetected <span class="em-red">for hours</span>.</h2>
+            <h3 class="reveal mt" style="color:var(--accent-orange)">Who protects you at hour zero?</h3>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">01 / The last months</p>
+            <h2 class="reveal">Famous packages. <span class="em-red">Massive blast radius.</span></h2>
+            <div class="atk-timeline reveal">
+                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">chalk</span><span class="d">~2.0B dl/month</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">debug</span><span class="d">~2.7B dl/month</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">Shai Hulud</span><span class="d">500+ packages</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">Mar 2026</span><span class="n">axios</span><span class="d">~479M dl/month</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">May 2026</span><span class="n">TanStack</span><span class="d">~259M dl/month</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">02 / The idea</p>
+            <h2 class="reveal">What if npm install had a gatekeeper?</h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">02 / Today</p>
+            <svg class="reveal" viewBox="0 0 720 200" width="min(92vw,720px)">
+                <rect class="bx" x="30" y="60" width="200" height="80" rx="10"/>
+                <text x="130" y="100" text-anchor="middle" style="font-size:30px">💻</text>
+                <text class="lbl-s" x="130" y="126" text-anchor="middle">npm install</text>
+                <path d="M240 100 H460" stroke="#8b949e" stroke-width="2" marker-end="url(#ar1)"/>
+                <rect class="bx" x="470" y="60" width="200" height="80" rx="10" stroke="#ff7b72"/>
+                <text x="570" y="100" text-anchor="middle" style="font-size:30px">🌍</text>
+                <text class="lbl-s" x="570" y="126" text-anchor="middle">npmjs.org</text>
+                <defs><marker id="ar1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8b949e"/></marker></defs>
+            </svg>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">02 / Say hello to Artifactory</p>
+            <svg class="reveal" viewBox="0 0 860 340" width="min(94vw,860px)">
+                <rect class="bx" x="20" y="60" width="180" height="80" rx="10"/>
+                <text x="110" y="100" text-anchor="middle" style="font-size:30px">💻</text>
+                <text class="lbl-s" x="110" y="126" text-anchor="middle">npm install</text>
+                <path d="M210 100 H320" stroke="#7ee787" stroke-width="2" marker-end="url(#ar2g)"/>
+                <rect class="bx" x="330" y="50" width="200" height="100" rx="10" stroke="#7ee787" stroke-width="2"/>
+                <text x="430" y="95" text-anchor="middle" style="font-size:30px">🐸</text>
+                <text class="lbl-s" x="430" y="122" text-anchor="middle">Artifactory</text>
+                <text class="lbl-s" x="430" y="138" text-anchor="middle" fill="#484f58">proxy + cache</text>
+                <path d="M540 100 H650" stroke="#8b949e" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ar2)"/>
+                <rect class="bx" x="660" y="60" width="180" height="80" rx="10"/>
+                <text x="750" y="100" text-anchor="middle" style="font-size:30px">🌍</text>
+                <text class="lbl-s" x="750" y="126" text-anchor="middle">npmjs.org</text>
+                <line x1="700" y1="52" x2="800" y2="148" stroke="#ff7b72" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+                <line x1="800" y1="52" x2="700" y2="148" stroke="#ff7b72" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+                <path d="M430 155 V210" stroke="#79c0ff" stroke-width="2" marker-end="url(#ar2b)"/>
+                <rect class="bx" x="310" y="220" width="240" height="80" rx="10" stroke="#79c0ff"/>
+                <text x="430" y="255" text-anchor="middle" style="font-size:24px">🔬</text>
+                <text class="lbl-s" x="430" y="280" text-anchor="middle" fill="#79c0ff">JFrog Security Research</text>
+                <defs>
+                    <marker id="ar2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8b949e"/></marker>
+                    <marker id="ar2g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#7ee787"/></marker>
+                    <marker id="ar2b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#79c0ff"/></marker>
+                </defs>
+            </svg>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">02 / The rules at the door</p>
+            <div class="policy-list reveal">
+                <div class="policy p1"><span class="pe">🚫</span><div class="pt"><div class="head">Known malicious</div><span>flagged by JFrog security research</span></div></div>
+                <div class="policy p2"><span class="pe">⏳</span><div class="pt"><div class="head">Too young</div><span>new versions can be held before everyone installs them</span></div></div>
+                <div class="policy p3"><span class="pe">🩹</span><div class="pt"><div class="head">Critical CVEs · wrong licenses</div><span>company policy, enforced before download</span></div></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide section-slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">03 / Live</p>
+            <div class="one-word reveal">DEMO</div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">04 / FAQ</p>
+            <div class="faq-list reveal">
+                <div class="faq-item">
+                    <div class="q">"How hard is this to set up?"</div>
+                    <div class="a">One line in <code>.npmrc</code>. That is it.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="q">"Only npm?"</div>
+                    <div class="a">No — JFrog also covers ecosystems like PyPI, Docker, Maven, Go, NuGet, and more.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">05 / And there is more</p>
+            <h2 class="reveal">And there is <span class="em-green">more</span>.</h2>
+            <div class="more-list reveal">
+                <div class="more-item"><div class="q">Xray</div><div class="a">Advanced Security</div></div>
+                <div class="more-item"><div class="q">JFrog MCP Server</div><div class="a">Connect AI agents to JFrog</div></div>
+                <div class="more-item"><div class="q">AI Catalog</div><div class="a">Govern AI models & agents</div></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide title-slide">
+        <div class="slide-content center">
+            <h1 class="reveal" style="font-size:var(--h2-size);margin-top:var(--content-gap)">Thanks!</h1>
+            <div class="qr-row reveal">
+                <figure>
+                    <img src="https://emmanuelorozco.com/assets/blog/agents/qr-linkedin.png" alt="LinkedIn QR">
+                    <figcaption>LinkedIn</figcaption>
+                </figure>
+            </div>
+            <p class="author reveal">emmanuelorozco.com</p>
+        </div>
+    </section>
+
+    <script>
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.currentSlide = 0;
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupProgressBar();
+                this.setupNavDots();
+            }
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            this.currentSlide = Array.from(this.slides).indexOf(entry.target);
+                            this.updateProgress();
+                            this.updateNavDots();
+                        }
+                    });
+                }, { threshold: 0.5 });
+                this.slides.forEach(slide => observer.observe(slide));
+            }
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); this.nextSlide(); }
+                    else if (e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); this.prevSlide(); }
+                    else if (e.key === 'Home') { e.preventDefault(); this.goToSlide(0); }
+                    else if (e.key === 'End') { e.preventDefault(); this.goToSlide(this.slides.length - 1); }
+                    else if (e.key.toLowerCase() === 'e') this.toggleEditMode();
+                });
+            }
+            setupTouchNav() {
+                let startY = 0;
+                document.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+                document.addEventListener('touchend', e => {
+                    const endY = e.changedTouches[0].clientY;
+                    const diff = startY - endY;
+                    if (Math.abs(diff) > 50) diff > 0 ? this.nextSlide() : this.prevSlide();
+                }, { passive: true });
+            }
+            setupProgressBar() { this.progressBar = document.getElementById('progressBar'); this.updateProgress(); }
+            updateProgress() { if (this.progressBar) this.progressBar.style.width = `${((this.currentSlide + 1) / this.slides.length) * 100}%`; }
+            setupNavDots() {
+                const nav = document.getElementById('navDots');
+                this.slides.forEach((_, i) => {
+                    const dot = document.createElement('button'); dot.className = 'nav-dot'; dot.addEventListener('click', () => this.goToSlide(i)); nav.appendChild(dot);
+                });
+                this.updateNavDots();
+            }
+            updateNavDots() { document.querySelectorAll('.nav-dot').forEach((dot, i) => dot.classList.toggle('active', i === this.currentSlide)); }
+            goToSlide(index) { if (index >= 0 && index < this.slides.length) this.slides[index].scrollIntoView({ behavior: 'smooth' }); }
+            nextSlide() { this.goToSlide(Math.min(this.currentSlide + 1, this.slides.length - 1)); }
+            prevSlide() { this.goToSlide(Math.max(this.currentSlide - 1, 0)); }
+            toggleEditMode() {
+                document.body.contentEditable = document.body.contentEditable === 'true' ? 'false' : 'true';
+                document.getElementById('editToggle').classList.toggle('active');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => new SlidePresentation());
+        const hotzone = document.querySelector('.edit-hotzone');
+        const toggle = document.getElementById('editToggle');
+        hotzone.addEventListener('mouseenter', () => toggle.classList.add('show'));
+        toggle.addEventListener('mouseleave', () => { if (!toggle.classList.contains('active')) toggle.classList.remove('show'); });
+        toggle.addEventListener('click', () => {
+            document.body.contentEditable = document.body.contentEditable === 'true' ? 'false' : 'true';
+            toggle.classList.toggle('active');
+        });
+    </script>
+</body>
+</html>
