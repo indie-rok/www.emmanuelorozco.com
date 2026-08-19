@@ -76,6 +76,13 @@ td.num b { color:var(--fg); font-weight:650 }
 .c-medium { background:rgba(217,119,6,.16); color:#d97706 }
 .c-low { background:rgba(220,38,38,.12); color:#dc2626 }
 .c-none { background:rgba(120,113,108,.15); color:var(--muted) }
+td.acts { text-align:right }
+td.acts button { font-size:12px; border-radius:6px; padding:3px 9px; margin-left:4px;
+        border:1px solid var(--line); background:transparent; color:var(--fg);
+        cursor:pointer; opacity:.55; white-space:nowrap }
+tr:hover td.acts button { opacity:1 }
+td.acts button:hover:enabled { border-color:var(--accent); color:var(--accent) }
+button:disabled { opacity:.25; cursor:not-allowed }
 .board { display:flex; gap:12px; align-items:flex-start; overflow-x:auto;
          padding-bottom:12px }
 .col { width:248px; min-width:248px; background:var(--col);
@@ -232,23 +239,124 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
     return pill;
   };
 
-  // ------- table view
-  const tbody = document.getElementById('tbody');
-  jobs.forEach(j => {
-    const tr = el('tr');
-    tr.dataset.status = j.status;
-    const co = el('td', 'co', j.company); co.title = j.company;
-    const role = el('td', 'role'); role.append(roleCell(j, ''));
-    const wh = el('td'); wh.append(wherePill(j));
-    const badgeTd = el('td');
-    if (j.status !== 'new') {
-      const b = el('span', 'badge s-' + j.status, BADGE[j.status]);
-      if (j.note) b.title = j.note;
-      badgeTd.append(b);
+  // ------- write access: the board key arrives once via the secret link
+  // (#k=...), then lives in localStorage. Without it the page is read-only.
+  let bkey = null;
+  try {
+    const km = location.hash.match(/k=([0-9a-f]{16,})/);
+    if (km) {
+      localStorage.setItem('board_key', km[1]);
+      history.replaceState(null, '', location.pathname);
     }
-    tr.append(co, role, wh, el('td', 'seen', fmtDate(j.first_seen)), badgeTd);
-    tbody.append(tr);
-  });
+    bkey = localStorage.getItem('board_key');
+  } catch (e) { /* private browsing: stay read-only */ }
+
+  // Which buttons each stage offers — same matrix as the old local table.
+  const ACTIONS = {
+    new: [['auto', '\u{1F916} Auto-apply'], ['mine', "I'll apply"], ['dismissed', '✕']],
+    error: [['auto', '\u{1F916} Auto-apply'], ['mine', "I'll apply"], ['dismissed', '✕']],
+    mine: [['applied', 'Mark applied']],
+    applied: [['response', 'Got response'], ['rejected', 'Rejected']],
+    response: [['rejected', 'Rejected']],
+    auto: [], rejected: [], dismissed: [],
+  };
+  // Undo steps back one stage, not to zero — undoing a response lands on
+  // applied, it does not erase that an application happened.
+  const BACK = { auto: 'new', mine: 'new', applied: 'mine', response: 'applied',
+                 rejected: 'applied', error: 'new', dismissed: 'new' };
+
+  async function act(j, status) {
+    try {
+      const r = await fetch(SB + '/rpc/set_status', {
+        method: 'POST',
+        headers: { ...HEADERS, 'Content-Profile': 'jobfinder',
+                   'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_key: bkey, p_job_key: j.job_key,
+                               p_status: status }),
+      });
+      if (!r.ok) {
+        const msg = (await r.json().catch(() => ({}))).message || ('HTTP ' + r.status);
+        if (String(msg).includes('bad key')) {
+          try { localStorage.removeItem('board_key'); } catch (e2) {}
+          alert('Your access link is no longer valid — the page is read-only again.');
+          location.reload();
+          return;
+        }
+        alert('Could not save: ' + msg);
+        return;
+      }
+    } catch (e) { alert('Could not save: ' + e.message); return; }
+    j.status = status;
+    j.note = '';
+    renderLeads();
+  }
+
+  const actsTd = (j) => {
+    const td = el('td', 'acts');
+    (ACTIONS[j.status] || []).forEach(([to, label]) => {
+      const b = el('button', null, label);
+      if (to === 'auto' && !/^https?:\/\//i.test((j.url || '').trim())) {
+        b.disabled = true; b.title = 'no application link collected';
+      }
+      if (to === 'dismissed') b.title = 'not relevant — remove';
+      b.onclick = () => act(j, to);
+      td.append(b);
+    });
+    if (j.status !== 'new') {
+      const u = el('button', null, '↩ Undo');
+      u.onclick = () => act(j, BACK[j.status] || 'new');
+      td.append(u);
+    }
+    return td;
+  };
+
+  // ------- table + board, rebuilt together after every status change
+  const tbody = document.getElementById('tbody');
+  const board = document.getElementById('board');
+  if (bkey) document.querySelector('thead tr').append(el('th'));
+
+  function renderLeads() {
+    tbody.textContent = '';
+    jobs.forEach(j => {
+      const tr = el('tr');
+      tr.dataset.status = j.status;
+      const co = el('td', 'co', j.company); co.title = j.company;
+      const role = el('td', 'role'); role.append(roleCell(j, ''));
+      const wh = el('td'); wh.append(wherePill(j));
+      const badgeTd = el('td');
+      if (j.status !== 'new') {
+        const b = el('span', 'badge s-' + j.status, BADGE[j.status]);
+        if (j.note) b.title = j.note;
+        badgeTd.append(b);
+      }
+      tr.append(co, role, wh, el('td', 'seen', fmtDate(j.first_seen)), badgeTd);
+      if (bkey) tr.append(actsTd(j));
+      tbody.append(tr);
+    });
+    board.textContent = '';
+    const byCol = {};
+    COLUMNS.forEach(([k]) => { byCol[k] = []; });
+    jobs.forEach(j => byCol[j.status].push(j));
+    COLUMNS.forEach(([key, label]) => {
+      const col = el('div', 'col');
+      const h = el('h2');
+      h.append(el('span', 'dot d-' + key), document.createTextNode(label + ' '),
+               el('span', 'n', String(byCol[key].length)));
+      const cards = el('div', 'cards');
+      byCol[key].forEach(j => {
+        const card = el('div', 'kcard');
+        card.append(el('div', 'kco', j.company), roleCell(j, 'ktitle'));
+        const metaRow = el('div', 'kmeta');
+        metaRow.append(wherePill(j), el('span', null, fmtDate(j.first_seen)));
+        card.append(metaRow);
+        if (j.note) card.append(el('div', 'note', j.note));
+        cards.append(card);
+      });
+      col.append(h, cards);
+      board.append(col);
+    });
+    applyFilter();
+  }
 
   const chipsBox = document.getElementById('chips');
   const CHIPS = COLUMNS.concat([['all', 'All']]);
@@ -276,31 +384,7 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
         c.querySelector('span').textContent = counts[c.dataset.f] || 0;
     });
   }
-  applyFilter();
-
-  // ------- board view
-  const byCol = {};
-  COLUMNS.forEach(([k]) => { byCol[k] = []; });
-  jobs.forEach(j => byCol[j.status].push(j));
-  const board = document.getElementById('board');
-  COLUMNS.forEach(([key, label]) => {
-    const col = el('div', 'col');
-    const h = el('h2');
-    h.append(el('span', 'dot d-' + key), document.createTextNode(label + ' '),
-             el('span', 'n', String(byCol[key].length)));
-    const cards = el('div', 'cards');
-    byCol[key].forEach(j => {
-      const card = el('div', 'kcard');
-      card.append(el('div', 'kco', j.company), roleCell(j, 'ktitle'));
-      const metaRow = el('div', 'kmeta');
-      metaRow.append(wherePill(j), el('span', null, fmtDate(j.first_seen)));
-      card.append(metaRow);
-      if (j.note) card.append(el('div', 'note', j.note));
-      cards.append(card);
-    });
-    col.append(h, cards);
-    board.append(col);
-  });
+  renderLeads();
 
   // ------- companies view (read-only mirror of the local /companies)
   const cRank = c => (!c.method || c.method === 'none') ? 1 : 0;
