@@ -250,6 +250,15 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
     }
     bkey = localStorage.getItem('board_key');
   } catch (e) { /* private browsing: stay read-only */ }
+  // Opening the secret link while the page is already loaded is a
+  // same-document navigation — the code above never reruns. Catch it here.
+  window.addEventListener('hashchange', () => {
+    const km = location.hash.match(/k=([0-9a-f]{16,})/);
+    if (km) {
+      try { localStorage.setItem('board_key', km[1]); } catch (e) {}
+      location.reload();
+    }
+  });
 
   // Which buttons each stage offers — same matrix as the old local table.
   const ACTIONS = {
@@ -266,6 +275,9 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
                  rejected: 'applied', error: 'new', dismissed: 'new' };
 
   async function act(j, status) {
+    if (j.busy) return;            // one in-flight write per job — two racing
+    j.busy = true;                 // RPCs could land in either order
+    renderLeads();
     try {
       const r = await fetch(SB + '/rpc/set_status', {
         method: 'POST',
@@ -285,16 +297,20 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
         alert('Could not save: ' + msg);
         return;
       }
-    } catch (e) { alert('Could not save: ' + e.message); return; }
-    j.status = status;
-    j.note = '';
-    renderLeads();
+      // Undoing a rejection should land where the rejection came from —
+      // 'rejected' is reachable from both 'applied' and 'response'.
+      j.cameFrom = status === 'rejected' ? j.status : null;
+      j.status = status;
+      j.note = '';
+    } catch (e) { alert('Could not save: ' + e.message); }
+    finally { j.busy = false; renderLeads(); }
   }
 
   const actsTd = (j) => {
     const td = el('td', 'acts');
     (ACTIONS[j.status] || []).forEach(([to, label]) => {
       const b = el('button', null, label);
+      if (j.busy) b.disabled = true;
       if (to === 'auto' && !/^https?:\/\//i.test((j.url || '').trim())) {
         b.disabled = true; b.title = 'no application link collected';
       }
@@ -304,7 +320,9 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
     });
     if (j.status !== 'new') {
       const u = el('button', null, '↩ Undo');
-      u.onclick = () => act(j, BACK[j.status] || 'new');
+      if (j.busy) u.disabled = true;
+      u.onclick = () => act(j, (j.status === 'rejected' && j.cameFrom) ||
+                               BACK[j.status] || 'new');
       td.append(u);
     }
     return td;
