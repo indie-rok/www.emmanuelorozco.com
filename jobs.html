@@ -62,6 +62,20 @@ td.seen { color:var(--muted); font-size:13px }
 .s-rejected { background:rgba(220,38,38,.10); color:#b91c1c }
 .s-dismissed { background:rgba(120,113,108,.15); color:var(--muted) }
 tr[data-status="dismissed"], tr[data-status="rejected"] { opacity:.55 }
+input.q { width:280px; max-width:100%; padding:6px 12px; font-size:13px;
+          color:var(--fg); background:var(--card); border:1px solid var(--line);
+          border-radius:8px; margin-bottom:6px }
+input.q:focus { outline:none; border-color:var(--accent) }
+.summary { color:var(--muted); font-size:13px; margin:2px 0 6px }
+.mut { color:var(--muted) }
+td.num, th.num { text-align:right; font-variant-numeric:tabular-nums }
+td.num { color:var(--muted) }
+td.num b { color:var(--fg); font-weight:650 }
+.pill { font-size:11px; border-radius:99px; padding:1px 8px }
+.c-high { background:rgba(22,163,74,.15); color:#16a34a }
+.c-medium { background:rgba(217,119,6,.16); color:#d97706 }
+.c-low { background:rgba(220,38,38,.12); color:#dc2626 }
+.c-none { background:rgba(120,113,108,.15); color:var(--muted) }
 .board { display:flex; gap:12px; align-items:flex-start; overflow-x:auto;
          padding-bottom:12px }
 .col { width:248px; min-width:248px; background:var(--col);
@@ -95,7 +109,7 @@ footer { color:var(--muted); font-size:12px; margin-top:16px; max-width:720px }
 <h1>&#127919; The DevRel job hunt, live
   <small id="sub"></small>
   <nav class="views" id="nav" hidden>
-    <a data-v="table" class="on">Table</a><a data-v="board">Board</a>
+    <a data-v="table" class="on">Table</a><a data-v="board">Board</a><a data-v="companies">Companies</a><a data-v="sources">Sources</a>
     <a href="/" style="border-left:1px solid var(--line)">emmanuelorozco.com &#8594;</a>
   </nav>
 </h1>
@@ -113,6 +127,24 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
   </table></div>
 </div>
 <div class="board" id="board" hidden></div>
+<div id="companiesview" hidden>
+  <div class="summary" id="csummary"></div>
+  <input class="q" type="search" placeholder="filter by name, domain, platform&#8230;">
+  <div class="wrap"><table>
+    <thead><tr><th>Company</th><th>Domain</th><th>Board</th><th>Match</th>
+    <th class="num">Jobs</th><th class="num">DevRel</th><th class="num">Leads</th>
+    <th>Last OK</th></tr></thead>
+    <tbody id="cbody"></tbody>
+  </table></div>
+</div>
+<div id="sourcesview" hidden>
+  <div class="summary" id="ssummary"></div>
+  <div class="wrap"><table>
+    <thead><tr><th>Source</th><th class="num">Jobs</th><th class="num">DevRel</th>
+    <th class="num">Leads</th><th class="num">Companies added</th><th>Last seen</th></tr></thead>
+    <tbody id="sbody"></tbody>
+  </table></div>
+</div>
 <footer id="foot"></footer>
 <script>
 (async () => {
@@ -155,11 +187,12 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
       'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')[d.getMonth()];
   };
 
-  let jobs, statuses, meta, sources;
+  let jobs, statuses, meta, sources, companies;
   try {
-    [jobs, statuses, meta, sources] = await Promise.all([
+    [jobs, statuses, meta, sources, companies] = await Promise.all([
       get('/jobs?select=*'), get('/lead_status?select=*'),
-      get('/meta?select=synced_at'), get('/sources?select=jobs,companies'),
+      get('/meta?select=synced_at'), get('/sources?select=*'),
+      get('/companies?select=*&limit=1000'),
     ]);
   } catch (e) {
     document.getElementById('status').textContent =
@@ -269,15 +302,89 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
     board.append(col);
   });
 
+  // ------- companies view (read-only mirror of the local /companies)
+  const cRank = c => (!c.method || c.method === 'none') ? 1 : 0;
+  companies.sort((a, b) => cRank(a) - cRank(b) ||
+    (b.leads || 0) - (a.leads || 0) || (b.devrel || 0) - (a.devrel || 0) ||
+    (b.jobs || 0) - (a.jobs || 0) ||
+    String(a.name || '').localeCompare(String(b.name || '')));
+  const cbody = document.getElementById('cbody');
+  companies.forEach(c => {
+    const tr = el('tr');
+    tr.dataset.s = ((c.name || '') + ' ' + (c.domain || '') + ' ' +
+                    (c.method || '')).toLowerCase();
+    const co = el('td', 'co', c.name || c.domain);
+    if (c.description) co.title = c.description;
+    const boardTd = el('td');
+    if (c.method && c.method !== 'none') {
+      boardTd.append(document.createTextNode(c.method),
+                     el('span', 'mut', c.slug ? ' · ' + c.slug : ''));
+    } else {
+      boardTd.append(el('span', 'mut', '—'));
+    }
+    const conf = c.method && c.method !== 'none'
+      ? el('span', 'pill c-' + (['high', 'medium', 'low'].includes(c.confidence)
+          ? c.confidence : 'none'), c.confidence || '?')
+      : el('span', 'pill c-none', 'unresolved');
+    const confTd = el('td'); confTd.append(conf);
+    const num = (v, bold) => {
+      const td = el('td', 'num');
+      if (v) td.append(bold ? el('b', null, String(v)) : document.createTextNode(String(v)));
+      return td;
+    };
+    tr.append(co, el('td', 'mut', c.domain), boardTd, confTd,
+              num(c.jobs), num(c.devrel), num(c.leads, true),
+              el('td', 'mut', c.last_ok_at ? fmtDate(c.last_ok_at) : ''));
+    cbody.append(tr);
+  });
+  const resolved = companies.filter(c => c.method && c.method !== 'none').length;
+  const csummary = document.getElementById('csummary');
+  const setCSummary = (shown) => {
+    csummary.textContent = shown + ' tracked · ' + resolved + ' boards resolved';
+  };
+  setCSummary(companies.length);
+  const q = document.querySelector('input.q');
+  q.addEventListener('input', () => {
+    const v = q.value.trim().toLowerCase();
+    let n = 0;
+    cbody.querySelectorAll('tr').forEach(tr => {
+      tr.hidden = Boolean(v) && !(tr.dataset.s || '').includes(v);
+      if (!tr.hidden) n++;
+    });
+    setCSummary(n);
+  });
+
+  // ------- sources view (read-only mirror of the local /sources)
+  sources.sort((a, b) => (b.jobs || 0) - (a.jobs || 0) ||
+    (b.companies || 0) - (a.companies || 0) ||
+    String(a.source).localeCompare(String(b.source)));
+  const sbody = document.getElementById('sbody');
+  sources.forEach(s => {
+    const tr = el('tr');
+    const num = (v, bold) => {
+      const td = el('td', 'num');
+      if (v) td.append(bold ? el('b', null, String(v)) : document.createTextNode(String(v)));
+      return td;
+    };
+    tr.append(el('td', 'co', s.source), num(s.jobs), num(s.devrel),
+              num(s.leads, true), num(s.companies),
+              el('td', 'mut', s.last_seen ? fmtDate(s.last_seen) : ''));
+    sbody.append(tr);
+  });
+
   // ------- view switcher (table is the default, like the local dashboard)
   const nav = document.getElementById('nav');
+  const VIEWS = { table: 'tableview', board: 'board',
+                  companies: 'companiesview', sources: 'sourcesview' };
   const show = (v) => {
-    document.getElementById('tableview').hidden = v !== 'table';
-    board.hidden = v !== 'board';
+    if (!VIEWS[v]) v = 'table';
+    Object.entries(VIEWS).forEach(([k, id]) => {
+      document.getElementById(id).hidden = k !== v;
+    });
     nav.querySelectorAll('a[data-v]').forEach(a =>
       a.classList.toggle('on', a.dataset.v === v));
     if (history.replaceState)
-      history.replaceState(null, '', v === 'board' ? '#board' : '#');
+      history.replaceState(null, '', v === 'table' ? '#' : '#' + v);
   };
   nav.querySelectorAll('a[data-v]').forEach(a => {
     a.onclick = () => show(a.dataset.v);
@@ -285,10 +392,12 @@ move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
 
   const totalJobs = sources.reduce((n, s) => n + (s.jobs || 0), 0);
   const totalCompanies = sources.reduce((n, s) => n + (s.companies || 0), 0);
+  document.getElementById('ssummary').textContent =
+    sources.length + ' channels · ' + totalJobs.toLocaleString() + ' jobs collected';
   document.getElementById('sub').textContent = jobs.length + ' roles';
   document.getElementById('status').hidden = true;
   nav.hidden = false;
-  show(location.hash === '#board' ? 'board' : 'table');
+  show(location.hash.replace('#', '') || 'table');
   const synced = meta[0] && meta[0].synced_at;
   document.getElementById('foot').textContent =
     'Distilled from ' + totalJobs.toLocaleString() + ' postings across ' +
