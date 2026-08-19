@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jobs — Emmanuel Orozco</title>
+<meta name="description" content="My live DevRel job hunt: every Developer Relations role in France and remote EU, scraped daily from company job boards, and where each application stands.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#127919;</text></svg>">
+<style>
+:root { --bg:#fafaf9; --card:#fff; --col:#f2f1ef; --fg:#1c1917; --muted:#78716c;
+        --line:#e7e5e4; --accent:#4f46e5; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#111110; --card:#232221; --col:#1a1918; --fg:#e7e5e4;
+          --muted:#a8a29e; --line:#2e2d2b; --accent:#818cf8; }
+}
+* { box-sizing:border-box; margin:0 }
+body { background:var(--bg); color:var(--fg); padding:20px 22px 30px;
+       font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif }
+h1 { font-size:19px; display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+h1 small { color:var(--muted); font-weight:400; font-size:13px }
+h1 a.home { margin-left:auto; font-size:13px; color:var(--muted); text-decoration:none }
+h1 a.home:hover { color:var(--accent) }
+p.blurb { color:var(--muted); font-size:13px; margin:8px 0 16px; max-width:720px }
+p.blurb a { color:var(--accent); text-decoration:none }
+#status { color:var(--muted); font-size:13px; margin:30px 0 }
+.board { display:flex; gap:12px; align-items:flex-start; overflow-x:auto;
+         padding-bottom:12px }
+.col { width:248px; min-width:248px; background:var(--col);
+       border:1px solid var(--line); border-radius:10px;
+       display:flex; flex-direction:column; max-height:calc(100vh - 160px) }
+.col h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+          color:var(--muted); font-weight:600; padding:10px 12px 8px;
+          display:flex; align-items:center; gap:7px }
+.col h2 .n { margin-left:auto; font-weight:400 }
+.dot { width:8px; height:8px; border-radius:99px; flex-shrink:0 }
+.d-new { background:#a8a29e }      .d-auto { background:var(--accent) }
+.d-mine { background:#0ea5e9 }     .d-applied { background:#16a34a }
+.d-response { background:#d97706 } .d-error { background:#dc2626 }
+.d-rejected { background:#881337 } .d-dismissed { background:#57534e }
+.cards { padding:2px 8px 8px; overflow-y:auto; flex:1; min-height:44px }
+.kcard { background:var(--card); border:1px solid var(--line); border-radius:8px;
+         padding:9px 10px 8px; margin-bottom:8px; font-size:13px }
+.kco { font-weight:650; margin-bottom:1px }
+.ktitle { margin-bottom:6px }
+.ktitle a { color:inherit; text-decoration:none }
+.ktitle a:hover { color:var(--accent); text-decoration:underline }
+.kmeta { display:flex; gap:7px; align-items:center; color:var(--muted); font-size:12px }
+.where { font-size:11px; border-radius:99px; padding:1px 8px }
+.w-france { background:rgba(79,70,229,.12); color:var(--accent) }
+.w-remote_eu { background:rgba(22,163,74,.14); color:#16a34a }
+.w-remote_global { background:rgba(120,113,108,.16); color:var(--muted) }
+.w-other { background:rgba(217,119,6,.15); color:#d97706 }
+.note { margin-top:7px; font-size:12px; color:#dc2626;
+        background:rgba(220,38,38,.08); border-radius:6px; padding:4px 7px;
+        overflow-wrap:break-word }
+footer { color:var(--muted); font-size:12px; margin-top:16px; max-width:720px }
+</style>
+</head>
+<body>
+<h1>&#127919; The DevRel job hunt, live
+  <small id="sub"></small>
+  <a class="home" href="/">emmanuelorozco.com &#8594;</a>
+</h1>
+<p class="blurb">Every Developer Relations role in France and remote-EU, scraped
+daily from company job boards by a
+<a href="/blog">pipeline I built</a> — and where each of my applications
+actually stands. Columns update as I (or my auto-apply agent) move things.
+CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
+<div id="status">Loading the board&#8230;</div>
+<div class="board" id="board" hidden></div>
+<footer id="foot"></footer>
+<script>
+(async () => {
+  const SB = 'https://rbiivvkzhyuzgnvhykzj.supabase.co/rest/v1';
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiaWl2dmt6aHl1emdudmh5a3pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MjgwNDYsImV4cCI6MjEwMDMwNDA0Nn0.FQBYhyiEDrxgak_uTF4XJYPzUDKp9vVr_9kPG7jXT0M';
+  const HEADERS = { apikey: KEY, Authorization: 'Bearer ' + KEY,
+                    'Accept-Profile': 'jobfinder' };
+  const COLUMNS = [
+    ['new', 'To do'], ['auto', 'Queued'], ['mine', 'Mine'],
+    ['applied', 'Applied'], ['response', 'Response'], ['error', 'Error'],
+    ['rejected', 'Rejected'], ['dismissed', 'Removed'],
+  ];
+  const WHERE = { france: ['France', 'w-france'], remote_eu: ['Remote EU', 'w-remote_eu'],
+                  remote_global: ['Worldwide', 'w-remote_global'] };
+  const BUCKET_ORDER = { france: 0, remote_eu: 1, remote_global: 2 };
+
+  const get = async (path) => {
+    const r = await fetch(SB + path, { headers: HEADERS });
+    if (!r.ok) throw new Error('supabase ' + r.status);
+    return r.json();
+  };
+
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  const ago = (iso) => {
+    const mins = Math.max(0, (Date.now() - new Date(iso)) / 60000);
+    if (mins < 90) return Math.round(mins) + ' min ago';
+    if (mins < 36 * 60) return Math.round(mins / 60) + ' h ago';
+    return Math.round(mins / 1440) + ' days ago';
+  };
+
+  const fmtDate = (iso) => {
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.getDate() + ' ' +
+      'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')[d.getMonth()];
+  };
+
+  let jobs, statuses, meta, sources;
+  try {
+    [jobs, statuses, meta, sources] = await Promise.all([
+      get('/jobs?select=*'), get('/lead_status?select=*'),
+      get('/meta?select=synced_at'), get('/sources?select=jobs,companies'),
+    ]);
+  } catch (e) {
+    document.getElementById('status').textContent =
+      'Could not load the board (' + e.message + '). Try a reload.';
+    return;
+  }
+
+  const status = {};
+  statuses.forEach(s => { status[s.job_key] = s; });
+  const byCol = {};
+  COLUMNS.forEach(([k]) => { byCol[k] = []; });
+  jobs.forEach(j => {
+    const s = status[j.job_key];
+    const k = s && byCol[s.status] ? s.status : 'new';
+    byCol[k].push({ ...j, note: s && s.note });
+  });
+  const rank = j => [BUCKET_ORDER[j.location_bucket] ?? 3, j.first_seen || ''];
+  Object.values(byCol).forEach(list => list.sort((a, b) => {
+    const [ba, fa] = rank(a), [bb, fb] = rank(b);
+    return ba - bb || (fa < fb ? 1 : fa > fb ? -1 : 0);
+  }));
+
+  const board = document.getElementById('board');
+  COLUMNS.forEach(([key, label]) => {
+    const col = el('div', 'col');
+    const h = el('h2');
+    h.append(el('span', 'dot d-' + key), document.createTextNode(label + ' '),
+             el('span', 'n', String(byCol[key].length)));
+    const cards = el('div', 'cards');
+    byCol[key].forEach(j => {
+      const card = el('div', 'kcard');
+      card.append(el('div', 'kco', j.company));
+      const title = el('div', 'ktitle');
+      const url = (j.url || '').trim();
+      if (/^https?:\/\//i.test(url)) {
+        const a = el('a', null, j.title);
+        a.href = url; a.target = '_blank'; a.rel = 'noopener';
+        title.append(a);
+      } else {
+        title.textContent = j.title;
+      }
+      card.append(title);
+      const metaRow = el('div', 'kmeta');
+      const [wLabel, wCls] = WHERE[j.location_bucket] ||
+        [j.location_bucket || '?', 'w-other'];
+      const pill = el('span', 'where ' + wCls, wLabel);
+      if (j.location_raw) pill.title = j.location_raw;
+      metaRow.append(pill, el('span', null, fmtDate(j.first_seen)));
+      card.append(metaRow);
+      if (j.note) card.append(el('div', 'note', j.note));
+      cards.append(card);
+    });
+    col.append(h, cards);
+    board.append(col);
+  });
+
+  const totalJobs = sources.reduce((n, s) => n + (s.jobs || 0), 0);
+  const totalCompanies = sources.reduce((n, s) => n + (s.companies || 0), 0);
+  document.getElementById('sub').textContent =
+    jobs.length + ' roles on the board';
+  document.getElementById('status').hidden = true;
+  board.hidden = false;
+  const synced = meta[0] && meta[0].synced_at;
+  document.getElementById('foot').textContent =
+    'Distilled from ' + totalJobs.toLocaleString() + ' postings across ' +
+    totalCompanies + ' companies. ' +
+    (synced ? 'Last synced ' + ago(synced) + '. ' : '') +
+    'Queued cards wait for the auto-apply agent — nothing is ever ' +
+    'submitted without a human step.';
+})();
+</script>
+</body>
+</html>
