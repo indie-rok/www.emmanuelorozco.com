@@ -25,6 +25,8 @@ p.blurb a { color:var(--accent); text-decoration:none }
 #status { color:var(--muted); font-size:13px; margin:30px 0 }
 .board { display:flex; gap:12px; align-items:flex-start; overflow-x:auto;
          padding-bottom:12px }
+/* author display rules beat the UA's [hidden] — restate it or it is inert */
+.board[hidden] { display:none }
 .col { width:248px; min-width:248px; background:var(--col);
        border:1px solid var(--line); border-radius:10px;
        display:flex; flex-direction:column; max-height:calc(100vh - 160px) }
