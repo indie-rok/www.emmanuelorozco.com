@@ -8,25 +8,62 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#127919;</text></svg>">
 <style>
 :root { --bg:#fafaf9; --card:#fff; --col:#f2f1ef; --fg:#1c1917; --muted:#78716c;
-        --line:#e7e5e4; --accent:#4f46e5; }
+        --line:#e7e5e4; --accent:#4f46e5; --hover:rgba(127,127,127,.07); }
 @media (prefers-color-scheme: dark) {
   :root { --bg:#111110; --card:#232221; --col:#1a1918; --fg:#e7e5e4;
-          --muted:#a8a29e; --line:#2e2d2b; --accent:#818cf8; }
+          --muted:#a8a29e; --line:#2e2d2b; --accent:#818cf8;
+          --hover:rgba(255,255,255,.05); }
 }
 * { box-sizing:border-box; margin:0 }
+[hidden] { display:none !important }  /* author display rules must never resurrect hidden things */
 body { background:var(--bg); color:var(--fg); padding:20px 22px 30px;
+       max-width:1020px; margin:0 auto;
        font:14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif }
 h1 { font-size:19px; display:flex; align-items:center; gap:10px; flex-wrap:wrap }
 h1 small { color:var(--muted); font-weight:400; font-size:13px }
-h1 a.home { margin-left:auto; font-size:13px; color:var(--muted); text-decoration:none }
-h1 a.home:hover { color:var(--accent) }
-p.blurb { color:var(--muted); font-size:13px; margin:8px 0 16px; max-width:720px }
+.views { display:inline-flex; gap:2px; border:1px solid var(--line);
+         border-radius:8px; padding:2px; margin-left:auto }
+.views a { padding:3px 12px; border-radius:6px; font-size:12px;
+           color:var(--muted); text-decoration:none; cursor:pointer }
+.views a.on { background:var(--accent); color:#fff }
+p.blurb { color:var(--muted); font-size:13px; margin:8px 0 14px; max-width:720px }
 p.blurb a { color:var(--accent); text-decoration:none }
 #status { color:var(--muted); font-size:13px; margin:30px 0 }
+.chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px }
+.chip { border:1px solid var(--line); background:var(--card); color:var(--fg);
+        border-radius:99px; padding:4px 12px; font-size:13px; cursor:pointer }
+.chip.on { border-color:var(--accent); color:var(--accent); font-weight:600 }
+.chip span { color:var(--muted); margin-left:4px }
+.chip.on span { color:var(--accent) }
+.wrap { overflow-x:auto }
+table { width:100%; border-collapse:collapse; margin-top:6px }
+thead th { text-align:left; font-size:11px; text-transform:uppercase;
+           letter-spacing:.06em; color:var(--muted); font-weight:600;
+           padding:12px 8px 8px; border-bottom:1px solid var(--line) }
+tbody tr { border-bottom:1px solid var(--line) }
+tbody tr:hover { background:var(--hover) }
+td { padding:8px; white-space:nowrap; vertical-align:middle }
+td.co { font-weight:650; max-width:180px; overflow:hidden; text-overflow:ellipsis }
+td.role { max-width:380px; overflow:hidden; text-overflow:ellipsis }
+td.role a { color:inherit; text-decoration:none }
+td.role a:hover { color:var(--accent); text-decoration:underline }
+td.seen { color:var(--muted); font-size:13px }
+.where { font-size:12px; border-radius:99px; padding:2px 9px; cursor:default }
+.w-france { background:rgba(79,70,229,.12); color:var(--accent) }
+.w-remote_eu { background:rgba(22,163,74,.14); color:#16a34a }
+.w-remote_global { background:rgba(120,113,108,.16); color:var(--muted) }
+.w-other { background:rgba(217,119,6,.15); color:#d97706 }
+.badge { font-size:12px; border-radius:99px; padding:2px 9px }
+.s-auto { background:rgba(79,70,229,.14); color:var(--accent) }
+.s-mine { background:rgba(14,165,233,.14); color:#0284c7 }
+.s-applied { background:rgba(22,163,74,.15); color:#16a34a }
+.s-response { background:rgba(217,119,6,.16); color:#d97706 }
+.s-error { background:rgba(220,38,38,.16); color:#dc2626 }
+.s-rejected { background:rgba(220,38,38,.10); color:#b91c1c }
+.s-dismissed { background:rgba(120,113,108,.15); color:var(--muted) }
+tr[data-status="dismissed"], tr[data-status="rejected"] { opacity:.55 }
 .board { display:flex; gap:12px; align-items:flex-start; overflow-x:auto;
          padding-bottom:12px }
-/* author display rules beat the UA's [hidden] — restate it or it is inert */
-.board[hidden] { display:none }
 .col { width:248px; min-width:248px; background:var(--col);
        border:1px solid var(--line); border-radius:10px;
        display:flex; flex-direction:column; max-height:calc(100vh - 160px) }
@@ -47,11 +84,7 @@ p.blurb a { color:var(--accent); text-decoration:none }
 .ktitle a { color:inherit; text-decoration:none }
 .ktitle a:hover { color:var(--accent); text-decoration:underline }
 .kmeta { display:flex; gap:7px; align-items:center; color:var(--muted); font-size:12px }
-.where { font-size:11px; border-radius:99px; padding:1px 8px }
-.w-france { background:rgba(79,70,229,.12); color:var(--accent) }
-.w-remote_eu { background:rgba(22,163,74,.14); color:#16a34a }
-.w-remote_global { background:rgba(120,113,108,.16); color:var(--muted) }
-.w-other { background:rgba(217,119,6,.15); color:#d97706 }
+.kmeta .where { font-size:11px; padding:1px 8px }
 .note { margin-top:7px; font-size:12px; color:#dc2626;
         background:rgba(220,38,38,.08); border-radius:6px; padding:4px 7px;
         overflow-wrap:break-word }
@@ -61,14 +94,24 @@ footer { color:var(--muted); font-size:12px; margin-top:16px; max-width:720px }
 <body>
 <h1>&#127919; The DevRel job hunt, live
   <small id="sub"></small>
-  <a class="home" href="/">emmanuelorozco.com &#8594;</a>
+  <nav class="views" id="nav" hidden>
+    <a data-v="table" class="on">Table</a><a data-v="board">Board</a>
+    <a href="/" style="border-left:1px solid var(--line)">emmanuelorozco.com &#8594;</a>
+  </nav>
 </h1>
 <p class="blurb">Every Developer Relations role in France and remote-EU, scraped
-daily from company job boards by a
-<a href="/blog">pipeline I built</a> — and where each of my applications
-actually stands. Columns update as I (or my auto-apply agent) move things.
-CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
-<div id="status">Loading the board&#8230;</div>
+daily from company job boards by a pipeline I built — and where each of my
+applications actually stands. This page updates as I (or my auto-apply agent)
+move things. CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
+<div id="status">Loading&#8230;</div>
+<div id="tableview" hidden>
+  <div class="chips" id="chips"></div>
+  <div class="wrap"><table>
+    <thead><tr><th>Company</th><th>Role</th><th>Where</th><th>Seen</th>
+    <th>Status</th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table></div>
+</div>
 <div class="board" id="board" hidden></div>
 <footer id="foot"></footer>
 <script>
@@ -82,6 +125,9 @@ CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
     ['applied', 'Applied'], ['response', 'Response'], ['error', 'Error'],
     ['rejected', 'Rejected'], ['dismissed', 'Removed'],
   ];
+  const BADGE = { auto: 'queued', mine: 'applying myself', applied: 'applied ✓',
+                  response: 'response ✉', error: 'error', rejected: 'rejected',
+                  dismissed: 'removed' };
   const WHERE = { france: ['France', 'w-france'], remote_eu: ['Remote EU', 'w-remote_eu'],
                   remote_global: ['Worldwide', 'w-remote_global'] };
   const BUCKET_ORDER = { france: 0, remote_eu: 1, remote_global: 2 };
@@ -91,21 +137,18 @@ CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
     if (!r.ok) throw new Error('supabase ' + r.status);
     return r.json();
   };
-
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
     if (text !== undefined) n.textContent = text;
     return n;
   };
-
   const ago = (iso) => {
     const mins = Math.max(0, (Date.now() - new Date(iso)) / 60000);
     if (mins < 90) return Math.round(mins) + ' min ago';
     if (mins < 36 * 60) return Math.round(mins / 60) + ' h ago';
     return Math.round(mins / 1440) + ' days ago';
   };
-
   const fmtDate = (iso) => {
     const d = new Date(iso);
     return isNaN(d) ? '' : d.getDate() + ' ' +
@@ -120,25 +163,92 @@ CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
     ]);
   } catch (e) {
     document.getElementById('status').textContent =
-      'Could not load the board (' + e.message + '). Try a reload.';
+      'Could not load the data (' + e.message + '). Try a reload.';
     return;
   }
 
   const status = {};
   statuses.forEach(s => { status[s.job_key] = s; });
-  const byCol = {};
-  COLUMNS.forEach(([k]) => { byCol[k] = []; });
   jobs.forEach(j => {
     const s = status[j.job_key];
-    const k = s && byCol[s.status] ? s.status : 'new';
-    byCol[k].push({ ...j, note: s && s.note });
+    j.status = s && BADGE.hasOwnProperty(s.status) ? s.status : 'new';
+    j.note = (s && s.note) || '';
   });
-  const rank = j => [BUCKET_ORDER[j.location_bucket] ?? 3, j.first_seen || ''];
-  Object.values(byCol).forEach(list => list.sort((a, b) => {
-    const [ba, fa] = rank(a), [bb, fb] = rank(b);
-    return ba - bb || (fa < fb ? 1 : fa > fb ? -1 : 0);
-  }));
+  const rank = j => BUCKET_ORDER[j.location_bucket] ?? 3;
+  jobs.sort((a, b) => rank(a) - rank(b) ||
+    ((a.first_seen || '') < (b.first_seen || '') ? 1 :
+     (a.first_seen || '') > (b.first_seen || '') ? -1 : 0));
 
+  const roleCell = (j, cls) => {
+    const cell = el('div', cls);
+    const url = (j.url || '').trim();
+    if (/^https?:\/\//i.test(url)) {
+      const a = el('a', null, j.title);
+      a.href = url; a.target = '_blank'; a.rel = 'noopener';
+      cell.append(a);
+    } else {
+      cell.textContent = j.title;
+    }
+    return cell;
+  };
+  const wherePill = (j) => {
+    const [label, cls] = WHERE[j.location_bucket] ||
+      [j.location_bucket || '?', 'w-other'];
+    const pill = el('span', 'where ' + cls, label);
+    if (j.location_raw) pill.title = j.location_raw;
+    return pill;
+  };
+
+  // ------- table view
+  const tbody = document.getElementById('tbody');
+  jobs.forEach(j => {
+    const tr = el('tr');
+    tr.dataset.status = j.status;
+    const co = el('td', 'co', j.company); co.title = j.company;
+    const role = el('td', 'role'); role.append(roleCell(j, ''));
+    const wh = el('td'); wh.append(wherePill(j));
+    const badgeTd = el('td');
+    if (j.status !== 'new') {
+      const b = el('span', 'badge s-' + j.status, BADGE[j.status]);
+      if (j.note) b.title = j.note;
+      badgeTd.append(b);
+    }
+    tr.append(co, role, wh, el('td', 'seen', fmtDate(j.first_seen)), badgeTd);
+    tbody.append(tr);
+  });
+
+  const chipsBox = document.getElementById('chips');
+  const CHIPS = COLUMNS.concat([['all', 'All']]);
+  CHIPS.forEach(([f, label]) => {
+    const c = el('button', 'chip' + (f === 'all' ? ' on' : ''), label + ' ');
+    c.dataset.f = f;
+    c.append(el('span'));
+    c.onclick = () => {
+      chipsBox.querySelector('.chip.on').classList.remove('on');
+      c.classList.add('on');
+      applyFilter();
+    };
+    chipsBox.append(c);
+  });
+  function applyFilter() {
+    const f = chipsBox.querySelector('.chip.on').dataset.f;
+    const counts = {};
+    tbody.querySelectorAll('tr').forEach(tr => {
+      counts[tr.dataset.status] = (counts[tr.dataset.status] || 0) + 1;
+      tr.hidden = f === 'all' ? tr.dataset.status === 'dismissed'
+                              : tr.dataset.status !== f;
+    });
+    chipsBox.querySelectorAll('.chip').forEach(c => {
+      if (c.dataset.f !== 'all')
+        c.querySelector('span').textContent = counts[c.dataset.f] || 0;
+    });
+  }
+  applyFilter();
+
+  // ------- board view
+  const byCol = {};
+  COLUMNS.forEach(([k]) => { byCol[k] = []; });
+  jobs.forEach(j => byCol[j.status].push(j));
   const board = document.getElementById('board');
   COLUMNS.forEach(([key, label]) => {
     const col = el('div', 'col');
@@ -148,23 +258,9 @@ CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
     const cards = el('div', 'cards');
     byCol[key].forEach(j => {
       const card = el('div', 'kcard');
-      card.append(el('div', 'kco', j.company));
-      const title = el('div', 'ktitle');
-      const url = (j.url || '').trim();
-      if (/^https?:\/\//i.test(url)) {
-        const a = el('a', null, j.title);
-        a.href = url; a.target = '_blank'; a.rel = 'noopener';
-        title.append(a);
-      } else {
-        title.textContent = j.title;
-      }
-      card.append(title);
+      card.append(el('div', 'kco', j.company), roleCell(j, 'ktitle'));
       const metaRow = el('div', 'kmeta');
-      const [wLabel, wCls] = WHERE[j.location_bucket] ||
-        [j.location_bucket || '?', 'w-other'];
-      const pill = el('span', 'where ' + wCls, wLabel);
-      if (j.location_raw) pill.title = j.location_raw;
-      metaRow.append(pill, el('span', null, fmtDate(j.first_seen)));
+      metaRow.append(wherePill(j), el('span', null, fmtDate(j.first_seen)));
       card.append(metaRow);
       if (j.note) card.append(el('div', 'note', j.note));
       cards.append(card);
@@ -173,19 +269,33 @@ CV lives <a href="https://cv.emmanuelorozco.com">here</a>.</p>
     board.append(col);
   });
 
+  // ------- view switcher (table is the default, like the local dashboard)
+  const nav = document.getElementById('nav');
+  const show = (v) => {
+    document.getElementById('tableview').hidden = v !== 'table';
+    board.hidden = v !== 'board';
+    nav.querySelectorAll('a[data-v]').forEach(a =>
+      a.classList.toggle('on', a.dataset.v === v));
+    if (history.replaceState)
+      history.replaceState(null, '', v === 'board' ? '#board' : '#');
+  };
+  nav.querySelectorAll('a[data-v]').forEach(a => {
+    a.onclick = () => show(a.dataset.v);
+  });
+
   const totalJobs = sources.reduce((n, s) => n + (s.jobs || 0), 0);
   const totalCompanies = sources.reduce((n, s) => n + (s.companies || 0), 0);
-  document.getElementById('sub').textContent =
-    jobs.length + ' roles on the board';
+  document.getElementById('sub').textContent = jobs.length + ' roles';
   document.getElementById('status').hidden = true;
-  board.hidden = false;
+  nav.hidden = false;
+  show(location.hash === '#board' ? 'board' : 'table');
   const synced = meta[0] && meta[0].synced_at;
   document.getElementById('foot').textContent =
     'Distilled from ' + totalJobs.toLocaleString() + ' postings across ' +
     totalCompanies + ' companies. ' +
     (synced ? 'Last synced ' + ago(synced) + '. ' : '') +
-    'Queued cards wait for the auto-apply agent — nothing is ever ' +
-    'submitted without a human step.';
+    'Queued roles wait for my auto-apply agent — nothing is ever submitted ' +
+    'without a human step.';
 })();
 </script>
 </body>
