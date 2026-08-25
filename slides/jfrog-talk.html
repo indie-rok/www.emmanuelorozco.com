@@ -226,7 +226,7 @@
     <section class="slide">
         <div class="slide-content center">
             <p class="kicker reveal">Supply chain attack</p>
-            <h2 class="reveal">Dependencies don't just add code.<br><span class="em-red">They run code — at install time.</span></h2>
+            <h2 class="reveal">When you install packages<br>that can have <span class="em-red">bad consequences</span>.</h2>
             <p class="reveal">Install scripts run automatically, with full access to your machine: files, tokens, credentials.</p>
         </div>
     </section>
@@ -235,15 +235,11 @@
         <div class="slide-content center gap-sm">
             <p class="section-number reveal">01 / Not hypothetical</p>
             <h2 class="reveal">This has already happened. <span class="em-red">Many times.</span></h2>
-            <div class="vs reveal">
-                <div class="a">
-                    <h3>🪱 Shai Hulud <span style="color:var(--text-muted);font-weight:400">· Sept 2025</span></h3>
-                    <p>Self-replicating npm worm. 500+ packages infected.<br><span style="color:var(--text-muted)">Stole npm tokens, GitHub creds, AWS/GCP keys.</span></p>
-                </div>
-                <div class="b">
-                    <h3>📦 Axios <span style="color:var(--text-muted);font-weight:400">· Mar 2026</span></h3>
-                    <p>~479M downloads/month. Malicious for hours.</p>
-                </div>
+            <div class="atk-timeline reveal">
+                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">chalk + debug</span><span class="d">~4.7B dl/month combined · maintainer phished</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">Shai Hulud worm</span><span class="d">500+ pkgs · stole npm tokens, GitHub, AWS keys</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">Mar 2026</span><span class="n">axios</span><span class="d">~479M dl/month · dropped a remote-access trojan · live ~3h</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">May 2026</span><span class="n">TanStack</span><span class="d">84 malicious versions · stole CI credentials (GitHub Actions)</span></div>
             </div>
         </div>
     </section>
@@ -253,19 +249,6 @@
             <p class="kicker reveal">The scary part</p>
             <h2 class="reveal">It can go undetected <span class="em-red">for hours</span>.</h2>
             <h3 class="reveal mt" style="color:var(--accent-orange)">Who protects you at hour zero?</h3>
-        </div>
-    </section>
-
-    <section class="slide">
-        <div class="slide-content center gap-sm">
-            <p class="section-number reveal">01 / The last months</p>
-            <h2 class="reveal">Famous packages. <span class="em-red">Massive blast radius.</span></h2>
-            <div class="atk-timeline reveal">
-                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">chalk + debug</span><span class="d">~4.7B dl/month combined · maintainer phished</span></div>
-                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">Shai Hulud worm</span><span class="d">500+ pkgs · @ctrl/tinycolor, even CrowdStrike</span></div>
-                <div class="atk"><span class="atk-dot"></span><span class="w">Mar 2026</span><span class="n">axios</span><span class="d">~479M dl/month · malicious for ~3 hours</span></div>
-                <div class="atk"><span class="atk-dot"></span><span class="w">May 2026</span><span class="n">TanStack</span><span class="d">~259M dl/month</span></div>
-            </div>
         </div>
     </section>
 
@@ -327,22 +310,6 @@
         <div class="slide-content center">
             <p class="section-number reveal">03 / Live</p>
             <div class="one-word reveal">DEMO</div>
-        </div>
-    </section>
-
-    <section class="slide">
-        <div class="slide-content center gap-sm">
-            <p class="section-number reveal">04 / FAQ</p>
-            <div class="faq-list reveal">
-                <div class="faq-item">
-                    <div class="q">"How hard is this to set up?"</div>
-                    <div class="a">One line in <code>.npmrc</code>. That is it.</div>
-                </div>
-                <div class="faq-item">
-                    <div class="q">"Only npm?"</div>
-                    <div class="a">No — JFrog also covers ecosystems like PyPI, Docker, Maven, Go, NuGet, and more.</div>
-                </div>
-            </div>
         </div>
     </section>
 
