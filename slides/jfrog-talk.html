@@ -226,8 +226,8 @@
     <section class="slide">
         <div class="slide-content center">
             <p class="kicker reveal">Supply chain attack</p>
-            <h2 class="reveal">A dependency can have side effects.</h2>
-            <p class="reveal">The package installs successfully, but the code that runs during install can read files, tokens, or credentials from the machine running it.</p>
+            <h2 class="reveal">Dependencies don't just add code.<br><span class="em-red">They run code — at install time.</span></h2>
+            <p class="reveal">Install scripts run automatically, with full access to your machine: files, tokens, credentials.</p>
         </div>
     </section>
 
@@ -238,7 +238,7 @@
             <div class="vs reveal">
                 <div class="a">
                     <h3>🪱 Shai Hulud <span style="color:var(--text-muted);font-weight:400">· Sept 2025</span></h3>
-                    <p>Self-replicating npm worm. 500+ packages infected.</p>
+                    <p>Self-replicating npm worm. 500+ packages infected.<br><span style="color:var(--text-muted)">Stole npm tokens, GitHub creds, AWS/GCP keys.</span></p>
                 </div>
                 <div class="b">
                     <h3>📦 Axios <span style="color:var(--text-muted);font-weight:400">· Mar 2026</span></h3>
@@ -261,10 +261,9 @@
             <p class="section-number reveal">01 / The last months</p>
             <h2 class="reveal">Famous packages. <span class="em-red">Massive blast radius.</span></h2>
             <div class="atk-timeline reveal">
-                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">chalk</span><span class="d">~2.0B dl/month</span></div>
-                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">debug</span><span class="d">~2.7B dl/month</span></div>
-                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">Shai Hulud</span><span class="d">500+ packages</span></div>
-                <div class="atk"><span class="atk-dot"></span><span class="w">Mar 2026</span><span class="n">axios</span><span class="d">~479M dl/month</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">chalk + debug</span><span class="d">~4.7B dl/month combined · maintainer phished</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">Sep 2025</span><span class="n">Shai Hulud worm</span><span class="d">500+ pkgs · @ctrl/tinycolor, even CrowdStrike</span></div>
+                <div class="atk"><span class="atk-dot"></span><span class="w">Mar 2026</span><span class="n">axios</span><span class="d">~479M dl/month · malicious for ~3 hours</span></div>
                 <div class="atk"><span class="atk-dot"></span><span class="w">May 2026</span><span class="n">TanStack</span><span class="d">~259M dl/month</span></div>
             </div>
         </div>
@@ -321,17 +320,6 @@
                     <marker id="ar2b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#79c0ff"/></marker>
                 </defs>
             </svg>
-        </div>
-    </section>
-
-    <section class="slide">
-        <div class="slide-content center gap-sm">
-            <p class="section-number reveal">02 / The rules at the door</p>
-            <div class="policy-list reveal">
-                <div class="policy p1"><span class="pe">🚫</span><div class="pt"><div class="head">Known malicious</div><span>flagged by JFrog security research</span></div></div>
-                <div class="policy p2"><span class="pe">⏳</span><div class="pt"><div class="head">Too young</div><span>new versions can be held before everyone installs them</span></div></div>
-                <div class="policy p3"><span class="pe">🩹</span><div class="pt"><div class="head">Critical CVEs · wrong licenses</div><span>company policy, enforced before download</span></div></div>
-            </div>
         </div>
     </section>
 
