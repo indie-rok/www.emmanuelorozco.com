@@ -30,7 +30,7 @@ I led product design and development, using coding agents to implement and test 
 - Host the evenings and the regular events.
 
 ### Marketing
-- Grew the Instagram account to **1.1k followers** (so far).
+- Grew the [Instagram](https://www.instagram.com/holdmyclub_paris/) account to **1.1k followers** (so far).
 - Run email campaigns to a list of 900 subscribers.
 - Plan and create Meta ads.
 - Use AI agents to analyze campaign data and improve the next ones.
