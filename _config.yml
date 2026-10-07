@@ -31,7 +31,16 @@ collections:
     permalink: /tagged/:slug/
   books:
     output: true
+  work:
+    output: true
+    permalink: /work/:name
 defaults:
+  -
+    scope:
+      path: ""
+      type: work
+    values:
+      layout: page
   -
     scope:
       path: ""
@@ -49,6 +58,7 @@ exclude:
 
 exclude: [vendor]
 
+Work: /work
 Blog: /blog
 Now: /now
 Books: /books
