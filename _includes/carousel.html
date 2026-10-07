@@ -1,0 +1,33 @@
+<div class="work-carousel">
+  <div class="work-carousel-track" role="region" aria-label="{{ page.title }} images" tabindex="0">
+    {% for image in page.gallery %}
+    <img src="{{ image.src }}" width="{{ image.width | default: 1200 }}" height="{{ image.height | default: 686 }}" alt="{{ image.alt }}"{% unless forloop.first %} loading="lazy"{% endunless %}>
+    {% endfor %}
+  </div>
+  <button class="work-carousel-arrow" data-dir="-1" aria-label="Previous image">‹</button>
+  <button class="work-carousel-arrow" data-dir="1" aria-label="Next image">›</button>
+  <div class="work-carousel-dots"></div>
+</div>
+<script>
+  (function (carousel) {
+    var track = carousel.querySelector('.work-carousel-track');
+    var slides = track.children;
+    var dots = carousel.querySelector('.work-carousel-dots');
+    var current = function () { return Math.round(track.scrollLeft / track.clientWidth); };
+    var go = function (i) { track.scrollTo({ left: Math.max(0, Math.min(i, slides.length - 1)) * track.clientWidth }); };
+    for (var i = 0; i < slides.length; i++) {
+      var dot = document.createElement('button');
+      dot.setAttribute('aria-label', 'Image ' + (i + 1) + ' of ' + slides.length);
+      dot.onclick = go.bind(null, i);
+      dots.appendChild(dot);
+    }
+    carousel.querySelectorAll('.work-carousel-arrow').forEach(function (arrow) {
+      arrow.onclick = function () { go(current() + Number(arrow.dataset.dir)); };
+    });
+    var update = function () {
+      [].forEach.call(dots.children, function (dot, i) { dot.setAttribute('aria-current', i === current()); });
+    };
+    track.addEventListener('scroll', update, { passive: true });
+    update();
+  })(document.currentScript.previousElementSibling);
+</script>
