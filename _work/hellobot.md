@@ -28,5 +28,6 @@ It cut onboarding time from 20 to 30 minutes (training videos) to 2 to 3 minutes
 - Designed and built the UI following [ADEO's Mozaic Design System](https://github.com/adeo/mozaic-design-system).
 - Planned and executed product decisions based on feedback from product owners.
 - Installed and deployed HelloBot in 7 ADEO products.
+- Ran the launch: email and Slack campaigns to bring on the first users and product teams.
 
 <p class="work-meta">Svelte · React · TypeScript · NestJS · Prisma</p>
