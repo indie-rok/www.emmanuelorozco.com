@@ -59,6 +59,7 @@ exclude:
 exclude: [vendor]
 
 Work: /work
+Slides: /slides/
 Blog: /blog
 Now: /now
 Books: /books

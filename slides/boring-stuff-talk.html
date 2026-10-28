@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Boring Stuff I Don't Do Anymore — Emmanuel Orozco</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Libre+Franklin:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2128;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --accent-main: #e6edf3;
+            --accent-green: #7ee787;
+            --accent-blue: #79c0ff;
+            --accent-orange: #ffa657;
+            --accent-red: #ff7b72;
+            --accent-purple: #bc8cff;
+            --border: #30363d;
+            --font-display: 'Libre Franklin', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --title-size: clamp(2rem, 6vw, 4.5rem);
+            --h2-size: clamp(1.5rem, 4vw, 3rem);
+            --h3-size: clamp(1.1rem, 2.5vw, 1.75rem);
+            --body-size: clamp(0.8rem, 1.5vw, 1.15rem);
+            --code-size: clamp(0.7rem, 1.2vw, 0.95rem);
+            --small-size: clamp(0.65rem, 1vw, 0.85rem);
+            --slide-padding: clamp(1.5rem, 5vw, 5rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+            --element-gap: clamp(0.25rem, 1vw, 1rem);
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow-x: hidden; }
+        html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+        body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-display); }
+        .slide {
+            width: 100vw; height: 100vh; height: 100dvh;
+            overflow: hidden; scroll-snap-align: start;
+            display: flex; flex-direction: column; position: relative;
+            background: var(--bg-primary);
+        }
+        .slide-content {
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
+            max-height: 100%; overflow: hidden; padding: var(--slide-padding);
+        }
+        img { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+        @media (max-height: 700px) {
+            :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --content-gap: clamp(0.4rem, 1.5vw, 1rem); --title-size: clamp(1.25rem, 4.5vw, 2.5rem); --h2-size: clamp(1rem, 3vw, 1.75rem); }
+        }
+        @media (max-width: 600px) { :root { --title-size: clamp(1.25rem, 7vw, 2.5rem); } }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+            html { scroll-behavior: auto; }
+        }
+
+        .reveal { opacity: 0; transform: translateY(25px); transition: opacity var(--duration-normal) var(--ease-out-expo), transform var(--duration-normal) var(--ease-out-expo); }
+        .slide.visible .reveal { opacity: 1; transform: translateY(0); }
+        .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .reveal:nth-child(2) { transition-delay: 0.15s; }
+        .reveal:nth-child(3) { transition-delay: 0.25s; }
+        .reveal:nth-child(4) { transition-delay: 0.35s; }
+        .reveal:nth-child(5) { transition-delay: 0.45s; }
+
+        .title-slide { justify-content: center; align-items: center; text-align: center; }
+        .title-slide h1 { font-size: var(--title-size); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: var(--element-gap); color: var(--text-primary); }
+        .title-slide .author { font-size: var(--body-size); color: var(--text-secondary); margin-top: var(--content-gap); font-family: var(--font-mono); }
+
+        .section-number { font-family: var(--font-mono); font-size: var(--small-size); color: var(--text-secondary); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: var(--element-gap); }
+        .slide h2 { font-size: var(--h2-size); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: var(--content-gap); color: var(--text-primary); }
+        .slide h2.heading { color: var(--accent-purple); }
+        .slide p { font-size: var(--body-size); color: var(--text-secondary); line-height: 1.6; max-width: 760px; }
+
+        .center { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .gap-sm { gap: var(--element-gap); }
+
+        .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent-green); z-index: 1000; transition: width 0.3s; width: 0; }
+        .nav-dots { position: fixed; right: clamp(8px, 1.5vw, 20px); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+        .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); cursor: pointer; transition: background 0.3s, transform 0.3s; border: none; padding: 0; }
+        .nav-dot.active { background: var(--accent-green); transform: scale(1.4); }
+        .edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+        .edit-toggle {
+            position: fixed; top: 12px; left: 12px; background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-size: 14px;
+            cursor: pointer; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+        [contenteditable="true"] { outline: 2px dashed var(--accent-green); outline-offset: 4px; border-radius: 4px; }
+        .slide::before {
+            content: ''; position: absolute; left: 0; top: 0; width: 3px; height: 100%;
+            background: linear-gradient(to bottom, var(--accent-green), transparent);
+            opacity: 0.25;
+        }
+
+        .em-green { color: var(--accent-green); }
+        .em-orange { color: var(--accent-orange); }
+
+        /* 6 people / 6 weeks */
+        .slide p.big-lines { font-size: clamp(1.4rem, 3.4vw, 2.6rem); font-weight: 800; line-height: 1.25; color: var(--text-primary); max-width: none; }
+        .slide p.foot { font-family: var(--font-mono); font-size: var(--small-size); color: var(--text-secondary); margin-top: var(--content-gap); }
+        .slide p.handle { font-family: var(--font-mono); font-size: var(--small-size); color: var(--text-secondary); }
+
+        /* the framework: Problem + Context -> Agent <-> Tool -> Goal -> Result */
+        svg .bx { fill: #1c2128; stroke: #30363d; stroke-width: 1.5; }
+        svg .n { font-family: 'Libre Franklin', sans-serif; font-weight: 800; font-size: 20px; fill: #e6edf3; }
+        svg .c { font-family: 'Libre Franklin', sans-serif; font-size: 13px; fill: #8b949e; }
+        svg .lbl-s { font-family: 'JetBrains Mono', monospace; font-size: 12px; fill: #8b949e; }
+        svg .ln { stroke: #8b949e; stroke-width: 1.5; }
+
+        /* one framework table per example */
+        .fw-table { border-collapse: collapse; width: min(92vw, 1150px); text-align: left; }
+        .fw-table th, .fw-table td { border: 1px solid var(--border); padding: clamp(.45rem, 1.2vw, .8rem) clamp(.7rem, 1.8vw, 1.2rem); vertical-align: middle; }
+        .fw-table th { background: var(--bg-card); width: 20%; font-weight: 800; font-size: clamp(1rem, 2vw, 1.6rem); color: var(--text-primary); }
+        .fw-table td { font-size: clamp(.95rem, 1.8vw, 1.4rem); color: var(--text-primary); line-height: 1.4; }
+        .fw-table .g { color: var(--accent-green); }
+
+        /* real screenshots */
+        img.shot { max-height: min(80vh, 760px); border: 1px solid var(--border); border-radius: 10px; }
+        img.shot.grow { width: min(var(--w), 92vw, calc(var(--ar) * 80vh)); height: auto; max-height: none; }  /* small screenshots: scale up like on the projector */
+        .shot-pair { display: flex; gap: var(--content-gap); align-items: center; justify-content: center; }
+        .shot-pair img.shot { max-width: 42vw; }
+        @media (max-width: 700px) {
+            .shot-pair { flex-direction: column; }
+            .shot-pair img.shot { max-width: 88vw; max-height: 40vh; }
+        }
+
+        .qr { width: clamp(140px, 24vw, 260px); max-height: none; border-radius: 8px; background: #fff; padding: 6px; margin-top: var(--content-gap); }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <nav class="nav-dots" id="navDots"></nav>
+    <div class="edit-hotzone"></div>
+    <button class="edit-toggle" id="editToggle" title="Edit mode (E)">Edit</button>
+
+    <section class="slide title-slide">
+        <div class="slide-content center">
+            <h1 class="reveal">The Boring Stuff<br>I Don't Do Anymore</h1>
+            <p class="author reveal">by - Emmanuel Orozco 🎸</p>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">01 / My company</p>
+            <h2 class="heading reveal">Hold My Club Circles</h2>
+            <p class="big-lines reveal"><span class="em-orange">6 people</span><br><span class="em-orange">6 weeks</span><br>a different activity every week</p>
+            <p class="foot reveal">holdmyclub.com</p>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">01 / Problem</p>
+            <h2 class="heading reveal">B2C company = lots of new learnings</h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">02 / Framework</p>
+            <h2 class="reveal">My problems aren't your problems.<br><span class="em-orange">So first, a framework.</span></h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="section-number reveal">02 / Framework</p>
+            <h2 class="heading reveal">The framework.</h2>
+            <svg class="reveal" viewBox="70 170 890 360" width="min(94vw, 1200px)" role="img"
+                 aria-label="Problem and Context go into the Agent. The Agent uses a Tool and gets results back, checks them against the Goal, and loops until the goal is met. Then there is a Result.">
+                <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#8b949e"/></marker></defs>
+
+                <rect class="bx" x="90" y="295" width="160" height="90" rx="10"/>
+                <text class="n" x="170" y="347" text-anchor="middle">Problem</text>
+                <path class="ln" d="M255 340 H347" marker-end="url(#ar)"/>
+
+                <rect class="bx" x="355" y="180" width="170" height="85" rx="10"/>
+                <text class="n" x="440" y="212" text-anchor="middle" style="fill:#7ee787">Context</text>
+                <text class="c" x="440" y="234" text-anchor="middle">what it needs</text>
+                <text class="c" x="440" y="251" text-anchor="middle">to know</text>
+                <path class="ln" d="M440 268 V289" marker-end="url(#ar)"/>
+
+                <rect class="bx" x="355" y="295" width="170" height="90" rx="10" style="stroke:#bc8cff"/>
+                <text class="n" x="440" y="335" text-anchor="middle" style="fill:#bc8cff;font-size:22px">Agent</text>
+                <text class="c" x="440" y="359" text-anchor="middle">Claude, Codex</text>
+
+                <rect class="bx" x="355" y="445" width="170" height="75" rx="10"/>
+                <text class="n" x="440" y="478" text-anchor="middle">Tool</text>
+                <text class="c" x="440" y="500" text-anchor="middle">does the job</text>
+                <path class="ln" d="M405 388 V439" marker-end="url(#ar)"/>
+                <text class="lbl-s" x="397" y="420" text-anchor="end">uses</text>
+                <path class="ln" d="M475 442 V391" marker-end="url(#ar)"/>
+                <text class="lbl-s" x="483" y="420">results</text>
+
+                <polygon class="bx" points="695,275 780,340 695,405 610,340"/>
+                <text class="n" x="695" y="339" text-anchor="middle" style="fill:#7ee787;font-size:17px">Goal</text>
+                <text class="c" x="695" y="357" text-anchor="middle">met?</text>
+                <text class="lbl-s" x="695" y="258" text-anchor="middle">what done looks like</text>
+                <path class="ln" d="M530 322.5 H625" marker-end="url(#ar)"/>
+                <text class="lbl-s" x="580" y="313" text-anchor="middle">check</text>
+                <path class="ln" d="M630 357.5 H535" marker-end="url(#ar)"/>
+                <text class="lbl-s" x="580" y="378" text-anchor="middle">no</text>
+                <text class="lbl-s" x="695" y="437" text-anchor="middle">↻ until the goal is met</text>
+
+                <path class="ln" d="M783 340 H819" marker-end="url(#ar)"/>
+                <text class="lbl-s" x="802" y="324" text-anchor="middle">yes</text>
+                <rect class="bx" x="825" y="295" width="115" height="90" rx="10"/>
+                <text class="n" x="882.5" y="347" text-anchor="middle">Result</text>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Example 1 · Instagram -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">03 / Example 1 · Instagram</p>
+            <h2 class="reveal">Problem 1<br><span class="em-orange">Reaching people interested in the brand<br>(insta follow to dm)</span></h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center gap-sm">
+            <p class="handle reveal">@holdmyclub_paris</p>
+            <img class="shot grow reveal" style="--w:62vw; --ar:1.356" src="/assets/slides/boring-stuff/instagram-dm.webp" alt="Instagram DM thread: the welcome message to a new follower, their reply, and them asking how to apply">
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <table class="fw-table reveal">
+                <tr><th>Problem</th><td>Marketing outreach, copy paste boring</td></tr>
+                <tr><th class="g">Context</th><td>List of accounts that follow our brand</td></tr>
+                <tr><th>Tool</th><td>Camofox (anti detection browser)</td></tr>
+                <tr><th class="g">Goal</th><td>Start a chat with every new follower</td></tr>
+                <tr><th>Result</th><td class="g">124 welcomed → 46 replied → 3 applied → 1 new customer</td></tr>
+                <tr><th>Saved</th><td class="g">€13/mo (Manychat)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Example 2 · WhatsApp -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">04 / Example 2 · WhatsApp</p>
+            <h2 class="reveal">Problem 2<br><span class="em-orange">Getting applicants on a call<br>(reminders)</span></h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <div class="shot-pair reveal">
+                <img class="shot" src="/assets/slides/boring-stuff/whatsapp-nudge.webp" alt="WhatsApp nudge to an applicant who hadn't booked a call; they reply 12 minutes later that they just booked">
+                <img class="shot" src="/assets/slides/boring-stuff/whatsapp-reminder.webp" alt="WhatsApp reminder one hour before a booked call, with a photo of Biscuit the puppy">
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <table class="fw-table reveal">
+                <tr><th>Problem</th><td>Applicants don't book a call, or don't show up</td></tr>
+                <tr><th class="g">Context</th><td>Applicant list (CRM) · bookings (Cal.com)</td></tr>
+                <tr><th>Tool</th><td>Beeper MCP (WhatsApp)</td></tr>
+                <tr><th class="g">Goal</th><td>More applicants get on a call</td></tr>
+                <tr><th>Result</th><td class="g">67 nudged → 13 booked a call → 6 new customers</td></tr>
+                <tr><th>Saved</th><td class="g">€53/mo (Wati)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Example 3 · Calls -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">05 / Example 3 · Calls</p>
+            <h2 class="reveal">Problem 3<br><span class="em-orange">Remembering every call</span></h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <img class="shot reveal" src="/assets/slides/boring-stuff/anarlog.webp" alt="Anarlog: quick notes typed during a call, then the summary it writes afterwards">
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <table class="fw-table reveal">
+                <tr><th>Problem</th><td>Easy to forget follow ups, details and query information</td></tr>
+                <tr><th class="g">Context</th><td>Call transcript history</td></tr>
+                <tr><th>Tool</th><td>Anarlog</td></tr>
+                <tr><th class="g">Goal</th><td>Every call → query notes</td></tr>
+                <tr><th>Result</th><td class="g">Easier to generate follow up emails, and ask questions about my clients</td></tr>
+                <tr><th>Saved</th><td class="g">Granola: €13/mo</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Example 4 · Video -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">06 / Example 4 · Video</p>
+            <h2 class="reveal">Problem 4<br><span class="em-orange">Editing video</span></h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <img class="shot reveal" src="/assets/slides/boring-stuff/palmier.webp" alt="The Palmier Pro editor, then two frames of the Hold My Club Circles ad it was used to cut">
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <table class="fw-table reveal">
+                <tr><th>Problem</th><td>Video editing is time consuming</td></tr>
+                <tr><th class="g">Context</th><td>event photos &amp; clips + Script</td></tr>
+                <tr><th>Tool</th><td>Palmier Pro MCP (open-source editor)</td></tr>
+                <tr><th class="g">Goal</th><td>Save time while video editing</td></tr>
+                <tr><th>Result</th><td class="g">Edit an Instagram clip in 30 min vs 2 hours by hand</td></tr>
+                <tr><th>Saved</th><td class="g">Time</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Example 5 · Sales -->
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">07 / Example 5 · Sales</p>
+            <h2 class="reveal">Problem 5<br><span class="em-orange">Learning something new<br>(for me, sales)</span></h2>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <img class="shot grow reveal" style="--w:78vw; --ar:1.550" src="/assets/slides/boring-stuff/feedback.webp" alt="My sales feedback app: the objections from one call, which ones I handled and which aren't in my script yet">
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <table class="fw-table reveal">
+                <tr><th>Problem</th><td>Hard to generate personalized feedback</td></tr>
+                <tr><th class="g">Context</th><td>Sales YT Channel Transcript + my call transcripts</td></tr>
+                <tr><th>Tool</th><td>Claude Code</td></tr>
+                <tr><th class="g">Goal</th><td>Have actionable improving steps on sales after every call</td></tr>
+                <tr><th>Result</th><td class="g">Closing rate 10% up to 40%</td></tr>
+                <tr><th>Saved</th><td class="g">Money on sales training</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="slide-content center">
+            <p class="section-number reveal">My one learning</p>
+            <h2 class="reveal">Learn the process<br><span class="em-orange">before automating</span></h2>
+        </div>
+    </section>
+
+    <section class="slide title-slide">
+        <div class="slide-content center">
+            <h1 class="reveal" style="font-size:var(--h2-size)">Thanks!</h1>
+            <img class="qr reveal" src="/assets/slides/boring-stuff/qr-linkedin.png" alt="QR code to linkedin.com/in/emmanuel-orozco">
+            <p class="author reveal">Emmanuel Orozco</p>
+        </div>
+    </section>
+
+    <script>
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.currentSlide = 0;
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupProgressBar();
+                this.setupNavDots();
+            }
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            this.currentSlide = Array.from(this.slides).indexOf(entry.target);
+                            this.updateProgress();
+                            this.updateNavDots();
+                        }
+                    });
+                }, { threshold: 0.5 });
+                this.slides.forEach(slide => observer.observe(slide));
+            }
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); this.nextSlide(); }
+                    else if (e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); this.prevSlide(); }
+                    else if (e.key === 'Home') { e.preventDefault(); this.goToSlide(0); }
+                    else if (e.key === 'End') { e.preventDefault(); this.goToSlide(this.slides.length - 1); }
+                    else if (e.key.toLowerCase() === 'e') this.toggleEditMode();
+                });
+            }
+            setupTouchNav() {
+                let startY = 0;
+                document.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+                document.addEventListener('touchend', e => {
+                    const endY = e.changedTouches[0].clientY;
+                    const diff = startY - endY;
+                    if (Math.abs(diff) > 50) diff > 0 ? this.nextSlide() : this.prevSlide();
+                }, { passive: true });
+            }
+            setupProgressBar() { this.progressBar = document.getElementById('progressBar'); this.updateProgress(); }
+            updateProgress() { if (this.progressBar) this.progressBar.style.width = `${((this.currentSlide + 1) / this.slides.length) * 100}%`; }
+            setupNavDots() {
+                const nav = document.getElementById('navDots');
+                this.slides.forEach((_, i) => {
+                    const dot = document.createElement('button'); dot.className = 'nav-dot'; dot.addEventListener('click', () => this.goToSlide(i)); nav.appendChild(dot);
+                });
+                this.updateNavDots();
+            }
+            updateNavDots() { document.querySelectorAll('.nav-dot').forEach((dot, i) => dot.classList.toggle('active', i === this.currentSlide)); }
+            goToSlide(index) { if (index >= 0 && index < this.slides.length) this.slides[index].scrollIntoView({ behavior: 'smooth' }); }
+            nextSlide() { this.goToSlide(Math.min(this.currentSlide + 1, this.slides.length - 1)); }
+            prevSlide() { this.goToSlide(Math.max(this.currentSlide - 1, 0)); }
+            toggleEditMode() {
+                document.body.contentEditable = document.body.contentEditable === 'true' ? 'false' : 'true';
+                document.getElementById('editToggle').classList.toggle('active');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => new SlidePresentation());
+        const hotzone = document.querySelector('.edit-hotzone');
+        const toggle = document.getElementById('editToggle');
+        hotzone.addEventListener('mouseenter', () => toggle.classList.add('show'));
+        toggle.addEventListener('mouseleave', () => { if (!toggle.classList.contains('active')) toggle.classList.remove('show'); });
+        toggle.addEventListener('click', () => {
+            document.body.contentEditable = document.body.contentEditable === 'true' ? 'false' : 'true';
+            toggle.classList.toggle('active');
+        });
+    </script>
+</body>
+</html>
