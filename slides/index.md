@@ -5,7 +5,7 @@ description: Slides from my talks.
 permalink: /slides/
 ---
 
-Slides from my talks. Use the arrow keys or scroll to move through a deck.
+Slides from my talks.
 
 <ul class="blog-posts">
   {% for deck in site.data.slides %}
