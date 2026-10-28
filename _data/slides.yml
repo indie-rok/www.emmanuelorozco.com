@@ -1,0 +1,19 @@
+# Decks in /slides, newest first. Add a line here when you add a deck; /slides lists them.
+- slug: boring-stuff-talk
+  title: The Boring Stuff I Don't Do Anymore
+  when: Oct 2026
+- slug: jfrog-talk
+  title: Whoops, I hacked my company
+  when: Aug 2026
+- slug: loop-engineering
+  title: Loop Engineering — Buzzword or worth learning?
+  when: Jul 2026
+- slug: marketing-talk
+  title: The Marketing I Don't Do Anymore
+  when: Jun 2026
+- slug: agents-talk-2
+  title: How AI Agents Work
+  when: May 2026
+- slug: agents-talk
+  title: How AI Agents Work — From a While Loop to OpenClaw
+  when: Mar 2026
